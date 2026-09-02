@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MENARINI | Failure Analysis</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><div class="logo">MENARINI</div><div class="divider"></div><div class="product">FAILURE ANALYSIS</div></div>
+    <div class="top-actions"><button class="btn ghost" id="btnExportSelected">Esporta PPTX</button><button class="btn primary" id="btnNewCase">+ Nuovo caso</button></div>
+  </header>
+
+  <main class="shell">
+    <section class="hero-row">
+      <div><div class="eyebrow">AGENDA RIUNIONE</div><h1>Failure Analysis</h1><div class="muted" id="meetingDate"></div></div>
+      <div class="hero-actions"><button class="btn soft" id="btnMeetingSnapshot">Salva snapshot riunione</button><button class="btn soft" id="btnExportAll">Esporta agenda PPTX</button></div>
+    </section>
+
+    <section class="metrics" id="metrics"></section>
+
+    <section class="toolbar card">
+      <input id="search" class="search" placeholder="Cerca ticket, titolo, modello, responsabile..." />
+      <select id="filterStatus"><option value="">Tutti gli stati</option><option>Aperto</option><option>Sospeso</option><option>Risolto</option></select>
+      <select id="filterPriority"><option value="">Tutte le priorità</option><option value="alta">Alta</option><option value="media">Media</option><option value="bassa">Bassa</option></select>
+      <button class="btn ghost" id="btnScoring">Configura scoring</button>
+      <button class="btn ghost" id="btnMeetings">Riunioni</button><button class="btn ghost" id="btnData">Dati</button>
+    </section>
+
+    <section class="card table-card">
+      <div class="section-head"><div><h2>Agenda casi</h2><p class="muted">Ordinata automaticamente per punteggio.</p></div><span class="pill" id="countLabel"></span></div>
+      <div class="table-wrap">
+        <table><thead><tr><th></th><th>Priorità</th><th>Ticket</th><th>Problema</th><th>Modelli</th><th>Azione aperta</th><th>Responsabile</th><th>Scadenza</th><th>Stato</th></tr></thead><tbody id="caseRows"></tbody></table>
+      </div>
+    </section>
+  </main>
+
+  <div class="drawer-backdrop hidden" id="backdrop"></div>
+  <aside class="drawer hidden" id="caseDrawer">
+    <div class="drawer-head"><div><div class="eyebrow">SCHEDA CASO</div><h2 id="drawerTitle"></h2></div><button class="icon-btn" id="closeDrawer">×</button></div>
+    <div id="drawerBody"></div>
+  </aside>
+
+  <dialog id="caseDialog" class="modal">
+    <form id="caseForm" method="dialog">
+      <div class="modal-head"><div><div class="eyebrow">NUOVO CASO</div><h2>Inserisci Failure Analysis</h2></div><button class="icon-btn" value="cancel">×</button></div>
+      <div class="form-grid">
+        <label>Ticket<input required name="ticket" placeholder="es. FA-306"></label>
+        <label>Titolo<input required name="title" placeholder="Descrizione sintetica"></label>
+        <label class="span2">Descrizione<textarea name="description" rows="3"></textarea></label>
+        <label>Modelli<input name="models" placeholder="Citymood 12, BEV..."></label>
+        <label>Ente / responsabile<input name="owner" placeholder="Engineering, Quality..."></label>
+        <label>Numero casi (Frequenza)<input name="frequencyCases" type="number" value="0" min="0" step="1"><small class="field-help" id="frequencyHelp">Coefficiente frequenza: 1</small></label>
+        <label>Sicurezza<select name="safety" class="score-select"></select></label>
+        <label>Sales deterrent<select name="sales" class="score-select"></select></label>
+        <label>Costi garanzia<select name="warranty" class="score-select"></select></label>
+        <label>Urgenza<select name="urgency" class="score-select"></select></label>
+        <label>Bonus manuale<input name="bonus" type="number" value="0" min="0" step="1"><small class="field-help">Correttivo discrezionale per aumentare la priorità.</small></label>
+        <label class="span2">Motivazione bonus<input name="bonusReason" placeholder="Perché il caso deve salire di priorità?"></label>
+        <div class="score-preview span2"><span>Punteggio iniziale</span><strong id="scorePreview">0</strong><small id="scoreWarning">Frequenza calcolata automaticamente; altri coefficienti configurabili finché non vengono validati con l’Access.</small></div>
+        <label class="span2">Prima azione<textarea name="action" rows="2" placeholder="Azione concordata / da eseguire"></textarea></label>
+        <label>Scadenza<input name="deadline" type="date"></label>
+        <label>Stato<select name="status"><option>Aperto</option><option>Sospeso</option></select></label>
+      </div>
+      <div class="modal-actions"><button class="btn ghost" value="cancel">Annulla</button><button class="btn primary" id="saveCase" value="default">Salva caso</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="scoringDialog" class="modal narrow">
+    <form id="scoringForm" method="dialog">
+      <div class="modal-head"><div><div class="eyebrow">CONFIGURAZIONE</div><h2>Scoring</h2></div><button class="icon-btn" value="cancel">×</button></div>
+      <p class="notice">La struttura è quella individuata nell'Access. I valori numerici sono modificabili e vanno validati contro le tabelle originali prima della migrazione definitiva.</p>
+      <div id="scoringEditor"></div>
+      <div class="modal-actions"><button class="btn ghost" value="cancel">Annulla</button><button class="btn primary" id="saveScoring" value="default">Salva scoring</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="meetingsDialog" class="modal narrow">
+    <form method="dialog"><div class="modal-head"><div><div class="eyebrow">ARCHIVIO</div><h2>Riunioni salvate</h2></div><button class="icon-btn" value="cancel">×</button></div><div id="meetingsList"></div><div class="modal-actions"><button class="btn primary" value="default">Chiudi</button></div></form>
+  </dialog>
+
+
+  <dialog id="updateDialog" class="modal narrow">
+    <form id="updateForm" method="dialog">
+      <input type="hidden" name="caseId">
+      <div class="modal-head"><div><div class="eyebrow">AGGIORNA CASO</div><h2>Nuovo aggiornamento riunione</h2></div><button class="icon-btn" value="cancel">×</button></div>
+      <div class="form-grid">
+        <label class="span2">Aggiornamento / decisione<textarea required name="note" rows="4" placeholder="Cosa è emerso durante la riunione?"></textarea></label>
+        <label class="span2">Nuova azione<textarea name="action" rows="2" placeholder="Nuova azione concordata"></textarea></label>
+        <label>Responsabile<input name="owner" placeholder="Responsabile azione"></label>
+        <label>Scadenza<input name="deadline" type="date"></label>
+        <label>Stato<select name="status"><option>Aperto</option><option>Sospeso</option><option>Risolto</option></select></label>
+      </div>
+      <div class="modal-actions"><button class="btn ghost" value="cancel">Annulla</button><button class="btn primary" value="default">Salva aggiornamento</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="dataDialog" class="modal narrow">
+    <form method="dialog">
+      <div class="modal-head"><div><div class="eyebrow">MIGRAZIONE</div><h2>Dati e immagini</h2></div><button class="icon-btn" value="cancel">×</button></div>
+      <div class="data-panel">
+        <p><b>Record:</b> il prototipo è già predisposto per ricevere l'importazione dall'Access.</p>
+        <p><b>Immagini:</b> ogni caso dispone di una galleria separata Problema / Soluzione. I collegamenti potranno essere popolati in un secondo momento quando recupereremo la cartella sul PC dell'altro utente.</p>
+        <button type="button" class="btn soft" id="btnExportJson">Esporta dati prototipo JSON</button>
+        <label class="import-label">Importa JSON<input type="file" id="jsonImport" accept="application/json,.json"></label>
+      </div>
+      <div class="modal-actions"><button class="btn primary" value="default">Chiudi</button></div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
