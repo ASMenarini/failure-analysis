@@ -1,399 +1,120 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>MENARINI | Failure Analysis</title>
-  <style>
-:root{--blue:#003f74;--blue2:#005792;--ink:#172533;--muted:#687887;--line:#dce4ea;--bg:#f3f6f8;--white:#fff;--danger:#b42318;--amber:#a15c00;--green:#137a45;--shadow:0 8px 24px rgba(21,48,70,.08)}
-*{box-sizing:border-box} body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--ink);background:var(--bg)}
-.topbar{height:72px;background:var(--blue);color:white;display:flex;align-items:center;justify-content:space-between;padding:0 34px;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.14)}
-.brand{display:flex;align-items:center;gap:16px}.logo{font-size:24px;font-weight:800;letter-spacing:.08em}.divider{height:28px;width:1px;background:rgba(255,255,255,.35)}.product{font-weight:600;letter-spacing:.08em;font-size:14px}.top-actions{display:flex;gap:10px}
-.shell{max-width:1500px;margin:auto;padding:34px}.hero-row{display:flex;justify-content:space-between;align-items:end;margin-bottom:22px}.hero-row h1{font-size:36px;margin:2px 0 6px}.eyebrow{font-size:11px;font-weight:800;letter-spacing:.13em;color:var(--blue2)}.muted{color:var(--muted)}
-.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:18px}.metric{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px 20px;box-shadow:var(--shadow)}.metric .k{font-size:12px;color:var(--muted);font-weight:700}.metric .v{font-size:30px;font-weight:800;margin-top:6px}.metric .s{font-size:12px;color:var(--muted);margin-top:2px}
-.card{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}.toolbar{display:flex;gap:10px;padding:12px;margin-bottom:18px}.search{flex:1;min-width:260px}.toolbar input,.toolbar select,input,select,textarea{border:1px solid #cfd9e1;border-radius:8px;background:white;padding:10px 12px;font:inherit;color:var(--ink)}
-.btn{border-radius:8px;padding:10px 15px;border:1px solid transparent;font-weight:700;cursor:pointer}.btn.primary{background:var(--blue2);color:white}.btn.ghost{background:transparent;color:inherit;border-color:#c8d5de}.topbar .btn.ghost{border-color:rgba(255,255,255,.45);color:white}.btn.soft{background:#eaf2f7;color:var(--blue);border-color:#d2e1eb}.hero-actions{display:flex;gap:10px}
-.table-card{overflow:hidden}.section-head{padding:18px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}.section-head h2{margin:0 0 4px}.section-head p{margin:0}.pill{background:#eef3f6;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:700}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:1100px}th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;text-align:left;color:#60717e;background:#f8fafb;padding:12px;border-bottom:1px solid var(--line)}td{padding:13px 12px;border-bottom:1px solid #edf1f4;vertical-align:middle;font-size:14px}tbody tr:hover{background:#f8fbfd;cursor:pointer}.priority{font-weight:900;font-size:16px}.priority.high{color:var(--danger)}.priority.medium{color:var(--amber)}.priority.low{color:var(--green)}.status{font-size:12px;font-weight:800;border-radius:999px;padding:5px 9px;display:inline-block}.status.aperto{background:#fdecea;color:var(--danger)}.status.sospeso{background:#fff4db;color:var(--amber)}.status.risolto{background:#e8f6ee;color:var(--green)}
-.drawer-backdrop{position:fixed;inset:0;background:rgba(12,28,40,.35);z-index:20}.drawer{position:fixed;right:0;top:0;height:100vh;width:min(720px,92vw);background:white;z-index:21;box-shadow:-18px 0 50px rgba(0,0,0,.18);overflow:auto}.hidden{display:none}.drawer-head,.modal-head{display:flex;justify-content:space-between;align-items:flex-start;padding:24px;border-bottom:1px solid var(--line)}.drawer-head h2,.modal-head h2{margin:3px 0 0}.icon-btn{border:0;background:#eef3f6;border-radius:8px;width:36px;height:36px;font-size:24px;cursor:pointer}.case-summary{padding:22px}.summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.summary-box{padding:14px;border:1px solid var(--line);border-radius:10px;background:#fafcfd}.summary-box span{font-size:11px;color:var(--muted);display:block}.summary-box strong{display:block;margin-top:4px}.case-section{padding:0 22px 22px}.case-section h3{border-top:1px solid var(--line);padding-top:18px}.timeline-item{position:relative;border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:10px;padding:14px 15px;margin:0 0 12px;background:#fbfdff}.timeline-item .timeline-date{font-size:12px;font-weight:800;color:var(--blue);margin-bottom:8px}.timeline-item .timeline-note{font-size:14px;line-height:1.5;margin-bottom:10px;white-space:pre-wrap}.timeline-changes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.timeline-change{background:#f2f6f9;border-radius:8px;padding:8px 10px;font-size:12px}.timeline-change span{display:block;color:var(--muted);font-size:10px;font-weight:800;text-transform:uppercase;margin-bottom:2px}.timeline-change strong{font-size:12px}.timeline-empty{padding:14px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);background:#fafcfd}.action-card{border:1px solid var(--line);border-radius:10px;padding:13px;margin-bottom:10px;background:#fbfcfd}.score-table{width:100%;min-width:0}.score-table td,.score-table th{padding:9px}
-.modal{width:min(860px,94vw);border:0;border-radius:14px;padding:0;box-shadow:0 22px 60px rgba(0,0,0,.26)}.modal::backdrop{background:rgba(13,29,42,.42)}.modal.narrow{width:min(650px,94vw)}.form-grid{padding:22px;display:grid;grid-template-columns:1fr 1fr;gap:14px}.form-grid label{font-size:12px;font-weight:700;color:#536672;display:flex;flex-direction:column;gap:6px}.span2{grid-column:span 2}.modal-actions{display:flex;justify-content:flex-end;gap:10px;padding:16px 22px;border-top:1px solid var(--line)}.score-preview{border-radius:10px;background:#eff6fa;border:1px solid #cfe0eb;padding:15px;display:grid;grid-template-columns:1fr auto;align-items:center}.score-preview strong{font-size:30px;color:var(--blue)}.score-preview small{grid-column:1/-1;color:#6d7f8c;margin-top:4px}.notice{margin:18px 22px;padding:12px;background:#fff7df;border:1px solid #f3dc9d;border-radius:8px;color:#72520b;font-size:13px}.score-group{padding:0 22px 16px}.score-group h3{margin-bottom:8px}.score-line{display:grid;grid-template-columns:1fr 90px;gap:10px;margin:7px 0}.meeting-item{margin:0 22px;padding:14px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}
-@media(max-width:900px){.metrics{grid-template-columns:repeat(2,1fr)}.toolbar{flex-wrap:wrap}.hero-row{align-items:flex-start;gap:16px;flex-direction:column}.topbar{padding:0 16px}.shell{padding:20px}.form-grid{grid-template-columns:1fr}.span2{grid-column:span 1}.summary-grid{grid-template-columns:1fr 1fr}}
-.field-help{font-size:11px;color:var(--muted);font-weight:500;line-height:1.3}.score-preview strong:before{content:'TOTALONE  ';font-size:10px;letter-spacing:.08em;color:var(--muted);vertical-align:middle}.priority.high{font-size:18px}.case-section .muted b{color:var(--ink)}
-.drawer-actions{margin-top:14px;display:flex;justify-content:flex-end}.image-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.image-card{margin:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#f8fafb}.image-card img{display:block;width:100%;height:210px;object-fit:contain;background:#eef3f6}.image-card figcaption{padding:8px 10px;font-size:12px;color:var(--muted)}.image-empty{display:flex;align-items:center;gap:14px;border:1px dashed #c6d5df;border-radius:10px;padding:18px;background:#f8fbfd}.image-empty-icon{font-size:32px;color:#7b94a6}.data-panel{padding:6px 22px 22px}.data-panel p{line-height:1.5}.import-label{display:inline-flex;align-items:center;gap:10px;margin-left:8px;border:1px solid #c8d5de;border-radius:8px;padding:9px 13px;font-weight:700;cursor:pointer}.import-label input{display:none}@media(max-width:700px){.image-gallery{grid-template-columns:1fr}}
-
-
-.case-page{min-height:calc(100vh - 140px)}.case-page-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.case-page-head{background:#fff;border:1px solid var(--line);border-radius:12px 12px 0 0;padding:26px 28px;border-bottom:0}.case-page-head h1{font-size:32px;margin:4px 0 0}.case-page-body{background:#fff;border:1px solid var(--line);border-radius:0 0 12px 12px;box-shadow:var(--shadow);padding-bottom:10px}.case-page-body .case-summary{padding:24px 28px}.case-page-body .case-section{padding:0 28px 26px}.case-page-body .image-gallery{grid-template-columns:repeat(3,minmax(0,1fr))}
-.multi-select{position:relative}.multi-select summary{list-style:none;border:1px solid #cfd9e1;border-radius:8px;background:#fff;padding:10px 12px;cursor:pointer;font-weight:500;color:var(--ink)}.multi-select summary::-webkit-details-marker{display:none}.multi-select summary:after{content:'▾';float:right;color:var(--muted)}.multi-options{position:absolute;z-index:30;left:0;right:0;top:calc(100% + 5px);max-height:260px;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:9px;box-shadow:0 12px 30px rgba(0,0,0,.15);padding:7px}.multi-option{display:flex!important;flex-direction:row!important;align-items:center;gap:9px;padding:8px 9px;border-radius:6px;font-size:13px!important;color:var(--ink)!important;cursor:pointer}.multi-option:hover{background:#f1f6f9}.multi-option input{width:auto;margin:0}.selected-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}.selected-chip{font-size:11px;background:#eaf2f7;color:var(--blue);padding:4px 7px;border-radius:999px;font-weight:700}
-@media(max-width:900px){.case-page-body .image-gallery{grid-template-columns:1fr}.case-page-top{align-items:stretch;gap:10px;flex-direction:column}.case-page-top .btn{width:100%}}
-
-.case-detail-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:22px;padding:0 28px 26px;align-items:start}.case-main-column .case-section{padding-left:0;padding-right:0}.case-main-column .case-section:first-child h3{border-top:0;padding-top:0}.case-score-side{position:sticky;top:92px;border:1px solid var(--line);border-radius:10px;background:#f8fafb;padding:14px}.case-score-side h3{margin:0 0 8px;font-size:14px;color:var(--blue);text-transform:uppercase;letter-spacing:.06em}.case-score-side .muted{font-size:11px;line-height:1.4}.case-score-side .score-table{font-size:11px}.case-score-side .score-table th,.case-score-side .score-table td{padding:6px 7px}.case-score-side .score-total{display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid var(--line);font-weight:800}.case-score-side .score-total strong{font-size:20px;color:var(--blue)}
-@media(max-width:1050px){.case-detail-grid{grid-template-columns:1fr}.case-score-side{position:static}.case-page-body .image-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}}
-
-.parts-block{grid-column:1/-1;border:1px solid var(--line);border-radius:10px;background:#fafcfd;padding:12px}.parts-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}.parts-head h4{margin:0;color:var(--blue);font-size:13px;text-transform:uppercase;letter-spacing:.04em}.parts-list{display:grid;gap:8px}.part-row{display:grid;grid-template-columns:minmax(140px,.8fr) minmax(220px,1.6fr) auto;gap:8px;align-items:center}.part-row.with-qty{grid-template-columns:minmax(130px,.75fr) minmax(200px,1.5fr) 90px auto}.part-row input{width:100%}.part-remove{border:1px solid #d5dee5;background:#fff;border-radius:7px;width:34px;height:34px;cursor:pointer;font-size:18px;color:#657985}.parts-table{width:100%;min-width:0;margin-top:8px;border:1px solid var(--line);border-radius:8px;overflow:hidden}.parts-table th{font-size:10px}.parts-table td,.parts-table th{padding:8px 9px}.parts-empty{font-size:12px;color:var(--muted);padding:10px 0}.timeline-parts{margin-top:10px;padding:9px 10px;border-radius:8px;background:#eef4f8}.timeline-parts-title{font-size:10px;font-weight:800;color:var(--blue);text-transform:uppercase;margin-bottom:6px}.solution-text{white-space:pre-wrap;line-height:1.5}
-@media(max-width:700px){.part-row,.part-row.with-qty{grid-template-columns:1fr}.part-remove{width:100%}}
-
-
-.attachment-picker{grid-column:1/-1;border:1px solid var(--line);border-radius:10px;background:#fafcfd;padding:14px}.attachment-picker-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}.attachment-picker-head h4{margin:0;color:var(--blue);font-size:13px;text-transform:uppercase;letter-spacing:.04em}.file-pick-btn{display:inline-flex;align-items:center;gap:8px;background:#eaf2f7;color:var(--blue);border:1px solid #d2e1eb;border-radius:8px;padding:9px 12px;font-weight:700;cursor:pointer}.file-pick-btn input{display:none}.pending-files,.attachment-files{display:grid;gap:8px;margin-top:10px}.pending-file,.attachment-file{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:9px;background:#fff;padding:9px 10px}.pending-file-thumb{width:54px;height:42px;object-fit:cover;border-radius:6px;background:#eef3f6}.file-icon{width:42px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:7px;background:#eef3f6;color:var(--blue);font-weight:900;font-size:11px}.file-meta{min-width:0;flex:1}.file-name{font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.file-sub{font-size:11px;color:var(--muted);margin-top:2px}.file-actions{display:flex;gap:6px}.file-action{border:1px solid #d5dee5;background:#fff;border-radius:7px;padding:6px 9px;cursor:pointer;font-size:12px;font-weight:700}.attachment-images{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:10px}.attachment-image{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#f8fafb}.attachment-image img{display:block;width:100%;height:220px;object-fit:contain;background:#eef3f6;cursor:zoom-in}.attachment-image .cap{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;font-size:12px}.section-title-actions{display:flex;justify-content:space-between;align-items:center;gap:12px}.section-title-actions h3{flex:1}.attachment-empty{border:1px dashed #c6d5df;border-radius:10px;padding:14px;color:var(--muted);background:#f8fbfd;font-size:13px}.modal.wide{width:min(920px,94vw)}
-@media(max-width:800px){.attachment-images{grid-template-columns:1fr}.attachment-picker-head,.section-title-actions{align-items:flex-start;flex-direction:column}}
-
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MENARINI — Failure Analysis</title>
+<style>
+:root{--blue:#0b4f8a;--blue2:#0a3f70;--bg:#f3f6f9;--card:#fff;--text:#17212b;--muted:#667788;--line:#dce4ec;--danger:#b42318;--warn:#b54708;--ok:#067647;--shadow:0 8px 24px rgba(0,0,0,.08)}
+*{box-sizing:border-box} body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+button,input,select,textarea{font:inherit} button{cursor:pointer}
+.topbar{height:72px;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.14)}
+.brand{display:flex;align-items:center;gap:16px}.brand-badge{font-weight:800;font-size:22px;letter-spacing:.8px}.brand-title{font-size:16px;opacity:.9;border-left:1px solid rgba(255,255,255,.35);padding-left:16px}
+.top-actions{display:flex;gap:10px}.btn{border:0;border-radius:8px;padding:10px 14px;font-weight:700}.btn-primary{background:#fff;color:var(--blue)}.btn-blue{background:var(--blue);color:#fff}.btn-soft{background:#eaf2f9;color:var(--blue)}.btn-ghost{background:transparent;color:inherit;border:1px solid var(--line)}.btn-danger{background:#fee4e2;color:var(--danger)}.btn-sm{padding:7px 10px;font-size:13px}
+.shell{display:grid;grid-template-columns:230px 1fr;min-height:calc(100vh - 72px)}
+.sidebar{background:#fff;border-right:1px solid var(--line);padding:22px 14px}.nav-item{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:8px;margin-bottom:6px;color:#334454;font-weight:700;cursor:pointer}.nav-item:hover,.nav-item.active{background:#eaf2f9;color:var(--blue)}.nav-count{margin-left:auto;background:#eef2f6;border-radius:20px;padding:2px 7px;font-size:12px}
+.main{padding:24px 28px;min-width:0}.page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:20px}.page-title{font-size:28px;font-weight:800;margin:0}.sub{color:var(--muted);margin-top:6px}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:18px}.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}.kpi strong{font-size:26px;display:block}.kpi span{color:var(--muted);font-size:13px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:14px}.toolbar input,.toolbar select{border:1px solid var(--line);border-radius:8px;padding:9px 10px;background:#fff}.toolbar input{min-width:280px;flex:1}
+.table-card{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}.table{width:100%;border-collapse:collapse}.table th,.table td{padding:13px 14px;border-bottom:1px solid #edf1f5;text-align:left;font-size:14px}.table th{background:#f8fafc;color:#536273;font-size:12px;text-transform:uppercase;letter-spacing:.4px}.table tbody tr:hover{background:#f8fbfe}.clickable{cursor:pointer}.score-pill{display:inline-flex;min-width:42px;justify-content:center;padding:5px 8px;border-radius:16px;background:#eaf2f9;color:var(--blue);font-weight:800}.status{display:inline-flex;padding:5px 9px;border-radius:16px;font-size:12px;font-weight:800}.open{background:#fee4e2;color:#b42318}.suspended{background:#fff0c2;color:#8a5b00}.closed{background:#d1fadf;color:#067647}.trash{background:#f2f4f7;color:#475467}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;box-shadow:0 1px 0 rgba(0,0,0,.02)}.section-title{font-size:15px;text-transform:uppercase;letter-spacing:.5px;color:#445465;font-weight:800;margin:0 0 12px}.muted{color:var(--muted)}
+.case-layout{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:16px;align-items:start}.case-main{display:flex;flex-direction:column;gap:14px}.case-side{position:sticky;top:94px;display:flex;flex-direction:column;gap:14px}.case-header{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.case-id{font-size:14px;color:var(--muted);font-weight:700}.case-title{font-size:26px;font-weight:800;margin:5px 0 0}.actions{display:flex;gap:8px;flex-wrap:wrap}.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.meta-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.meta{background:#f8fafc;border:1px solid #edf1f5;border-radius:9px;padding:10px}.meta b{display:block;font-size:12px;color:#667788;margin-bottom:4px}.parts-table{width:100%;border-collapse:collapse}.parts-table td,.parts-table th{border-bottom:1px solid #edf1f5;padding:8px 6px;text-align:left;font-size:13px}
+.attach-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}.attachment{border:1px solid var(--line);border-radius:10px;background:#fafbfd;overflow:hidden}.attachment img{width:100%;height:140px;object-fit:cover;display:block;background:#eef2f6}.attachment-body{padding:10px}.attachment-name{font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.attachment-tools{display:flex;gap:6px;margin-top:8px}.file-icon{height:140px;display:grid;place-items:center;font-size:40px;background:#eef2f6;color:#5d6c7a}
+.current-action{border-left:4px solid var(--blue);padding-left:14px}.action-row{display:grid;grid-template-columns:1.4fr .9fr .7fr .6fr;gap:10px;margin-top:10px}.tag{display:inline-flex;padding:4px 8px;border-radius:15px;background:#eef4f8;font-size:12px;font-weight:700}
+.timeline{display:flex;flex-direction:column;gap:12px}.timeline-item{border:1px solid var(--line);border-radius:10px;padding:14px;background:#fff}.timeline-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:8px}.timeline-date{font-weight:800;color:var(--blue)}.timeline-text{white-space:pre-wrap;line-height:1.45}.timeline-extra{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}.timeline-box{background:#f8fafc;border-radius:8px;padding:8px;font-size:13px}.timeline-box b{display:block;font-size:11px;color:#667788;margin-bottom:3px;text-transform:uppercase}
+.score-card{padding:14px}.score-total{text-align:center;padding:8px 0 12px;border-bottom:1px solid var(--line);margin-bottom:8px}.score-total strong{font-size:32px;color:var(--blue)}.score-list{display:flex;flex-direction:column;gap:7px}.score-row{display:flex;justify-content:space-between;gap:10px;font-size:12px}.score-row span:first-child{color:#657586}.score-row b{font-size:13px}.bonus-note{font-size:11px;color:#7a5b00;background:#fff8db;padding:7px;border-radius:7px;margin-top:7px}
+.modal-backdrop{position:fixed;inset:0;background:rgba(10,25,40,.5);display:none;align-items:flex-start;justify-content:center;padding:50px 20px;z-index:100;overflow:auto}.modal-backdrop.show{display:flex}.modal{width:min(980px,100%);background:#fff;border-radius:14px;box-shadow:var(--shadow);overflow:hidden}.modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--line)}.modal-head h2{margin:0;font-size:21px}.modal-body{padding:20px}.modal-foot{display:flex;justify-content:flex-end;gap:10px;padding:16px 20px;border-top:1px solid var(--line);background:#fafbfd}.x{border:0;background:transparent;font-size:24px;color:#697586}
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}.field label{font-size:12px;font-weight:800;color:#526273;text-transform:uppercase}.field input,.field select,.field textarea{border:1px solid #cfd9e3;border-radius:8px;padding:10px;background:#fff}.field textarea{min-height:95px;resize:vertical}.hint{font-size:12px;color:var(--muted)}.required:after{content:' *';color:#d92d20}.form-section{border-top:1px solid var(--line);padding-top:16px;margin-top:16px}.form-section:first-child{border-top:0;padding-top:0;margin-top:0}.form-title{font-weight:800;margin-bottom:10px;color:#324252}.inline-row{display:grid;grid-template-columns:1fr 1.5fr auto;gap:8px;margin-bottom:8px}.inline-row.qty{grid-template-columns:1fr 1.5fr .6fr auto}.multi-wrap{position:relative}.multi-button{width:100%;text-align:left;border:1px solid #cfd9e3;background:#fff;border-radius:8px;padding:10px;min-height:41px}.multi-panel{display:none;position:absolute;left:0;right:0;top:45px;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);padding:8px;z-index:5;max-height:220px;overflow:auto}.multi-panel.show{display:block}.multi-option{display:flex;gap:8px;padding:6px}.chips{display:flex;gap:5px;flex-wrap:wrap}.chip{background:#edf4fa;border-radius:14px;padding:4px 8px;font-size:12px}.empty{padding:35px;text-align:center;color:var(--muted)}
+.toast{position:fixed;right:20px;bottom:20px;background:#17212b;color:#fff;padding:12px 15px;border-radius:9px;z-index:200;display:none}.toast.show{display:block}.danger-zone{border:1px solid #fecdca;background:#fff6f5}.danger-zone .section-title{color:var(--danger)}
+@media(max-width:1050px){.shell{grid-template-columns:1fr}.sidebar{display:none}.kpis{grid-template-columns:repeat(2,1fr)}.case-layout{grid-template-columns:1fr}.case-side{position:static}.meta-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){.main{padding:16px}.topbar{padding:0 15px}.brand-title{display:none}.form-grid,.grid-2,.meta-grid,.action-row,.timeline-extra{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}.table-card{overflow:auto}.toolbar input{min-width:100%}}
 </style>
-  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand"><div class="logo">MENARINI</div><div class="divider"></div><div class="product">FAILURE ANALYSIS</div></div>
-    <div class="top-actions"><button class="btn ghost" id="btnExportSelected">Esporta PPTX</button><button class="btn primary" id="btnNewCase">+ Nuovo caso</button></div>
-  </header>
-
-  <main class="shell">
-    <div id="dashboardView">
-    <section class="hero-row">
-      <div><div class="eyebrow">AGENDA RIUNIONE</div><h1>Failure Analysis</h1><div class="muted" id="meetingDate"></div></div>
-      <div class="hero-actions"><button class="btn soft" id="btnMeetingSnapshot">Salva snapshot riunione</button><button class="btn soft" id="btnExportAll">Esporta agenda PPTX</button></div>
-    </section>
-
-    <section class="metrics" id="metrics"></section>
-
-    <section class="toolbar card">
-      <input id="search" class="search" placeholder="Cerca scheda, titolo, modello, responsabile..." />
-      <select id="filterStatus"><option value="">Tutti gli stati</option><option>Aperto</option><option>Sospeso</option><option>Risolto</option></select>
-      <select id="filterPriority"><option value="">Tutte le priorità</option><option value="alta">Alta</option><option value="media">Media</option><option value="bassa">Bassa</option></select>
-      <button class="btn ghost" id="btnScoring">Configura scoring</button>
-      <button class="btn ghost" id="btnMeetings">Riunioni</button><button class="btn ghost" id="btnData">Dati</button>
-    </section>
-
-    <section class="card table-card">
-      <div class="section-head"><div><h2>Agenda casi</h2><p class="muted">Ordinata automaticamente per punteggio.</p></div><span class="pill" id="countLabel"></span></div>
-      <div class="table-wrap">
-        <table><thead><tr><th></th><th>Priorità</th><th>Scheda</th><th>Anomalia</th><th>Modelli</th><th>Azione aperta</th><th>Responsabile</th><th>Scadenza</th><th>Stato</th></tr></thead><tbody id="caseRows"></tbody></table>
-      </div>
-    </section>
-    </div>
-
-    <section id="casePage" class="case-page hidden">
-      <div class="case-page-top">
-        <button class="btn ghost" type="button" id="backToAgenda">← Torna all'agenda</button>
-        <button class="btn primary" type="button" id="pageUpdateCase">+ Aggiorna riunione</button>
-      </div>
-      <div class="case-page-head">
-        <div><div class="eyebrow">SCHEDA CASO</div><h1 id="casePageTitle"></h1></div>
-      </div>
-      <div id="casePageBody" class="case-page-body"></div>
-    </section>
-  </main>
-
-  <dialog id="caseDialog" class="modal">
-    <form id="caseForm" method="dialog">
-      <div class="modal-head"><div><div class="eyebrow">NUOVO CASO</div><h2>Inserisci Failure Analysis</h2></div><button class="icon-btn" type="button" data-close-dialog="caseDialog">×</button></div>
-      <div class="form-grid">
-        <label>Scheda<input required name="ticket" placeholder="es. 306"></label>
-        <label>Titolo<input required name="title" placeholder="Descrizione sintetica"></label>
-        <label class="span2">Descrizione<textarea name="description" rows="3"></textarea></label>
-        <div class="parts-block"><div class="parts-head"><h4>Ricambi ANOMALIA</h4><button type="button" class="btn soft" data-add-part="anomalyParts">+ Aggiungi ricambio</button></div><div class="parts-list" id="anomalyParts"></div><small class="field-help">Facoltativo · Part Number + Descrizione · più righe consentite.</small></div>
-        <div class="attachment-picker"><div class="attachment-picker-head"><h4>Allegati ANOMALIA</h4><label class="file-pick-btn">+ Aggiungi file<input id="newAnomalyFiles" type="file" multiple></label></div><small class="field-help">Puoi allegare immagini, PDF, Excel, Word, PowerPoint e altri documenti tecnici. Le immagini saranno mostrate direttamente nella scheda.</small><div class="pending-files" id="newAnomalyFileList"></div></div>
-        <label>Modelli coinvolti
-          <details class="multi-select" id="modelsDropdown">
-            <summary id="modelsSummary">Seleziona uno o più modelli</summary>
-            <div class="multi-options" id="modelsOptions"></div>
-          </details>
-          <small class="field-help">Multiselezione dall'anagrafica MODELLI; sarà popolata integralmente con l'import Access.</small>
-        </label>
-        <label>Ente / responsabile<select name="owner" id="ownerSelect"><option value="">Seleziona ente</option></select></label>
-        <label>Numero casi (Frequenza)<input name="frequencyCases" type="number" value="0" min="0" step="1"><small class="field-help" id="frequencyHelp">Coefficiente frequenza: 1</small></label>
-        <label>Sicurezza<select name="safety" class="score-select"></select></label>
-        <label>Sales deterrent<select name="sales" class="score-select"></select></label>
-        <label>Costi garanzia (€)<input name="warrantyCost" type="number" min="0" step="0.01" value="0" placeholder="es. 12500"><small class="field-help" id="warrantyHelp">Inserisci il costo reale; il coefficiente verrà associato alla fascia configurata.</small></label>
-        <label>Urgenza<select name="urgency" class="score-select"></select></label>
-        <label>Bonus manuale<input name="bonus" type="number" value="0" min="0" step="1"><small class="field-help">Correttivo discrezionale per aumentare la priorità.</small></label>
-        <label class="span2">Motivazione bonus<input name="bonusReason" placeholder="Perché il caso deve salire di priorità?"></label>
-        <div class="score-preview span2"><span>Punteggio iniziale</span><strong id="scorePreview">0</strong><small id="scoreWarning">Frequenza calcolata automaticamente; altri coefficienti configurabili finché non vengono validati con l’Access.</small></div>
-        <label class="span2">Prima azione<textarea name="action" rows="2" placeholder="Azione concordata / da eseguire"></textarea></label>
-        <label>Scadenza<input name="deadline" type="date"></label>
-        <label>Stato<select name="status"><option>Aperto</option><option>Sospeso</option><option>Risolto</option></select></label>
-      </div>
-      <div class="modal-actions"><button class="btn ghost" type="button" data-close-dialog="caseDialog">Annulla</button><button class="btn primary" id="saveCase" value="default">Salva caso</button></div>
-    </form>
-  </dialog>
-
-  <dialog id="scoringDialog" class="modal narrow">
-    <form id="scoringForm" method="dialog">
-      <div class="modal-head"><div><div class="eyebrow">CONFIGURAZIONE</div><h2>Scoring</h2></div><button class="icon-btn" value="cancel">×</button></div>
-      <p class="notice">La struttura è quella individuata nell'Access. I valori numerici sono modificabili e vanno validati contro le tabelle originali prima della migrazione definitiva.</p>
-      <div id="scoringEditor"></div>
-      <div class="modal-actions"><button class="btn ghost" value="cancel">Annulla</button><button class="btn primary" id="saveScoring" value="default">Salva scoring</button></div>
-    </form>
-  </dialog>
-
-  <dialog id="meetingsDialog" class="modal narrow">
-    <form method="dialog"><div class="modal-head"><div><div class="eyebrow">ARCHIVIO</div><h2>Riunioni salvate</h2></div><button class="icon-btn" value="cancel">×</button></div><div id="meetingsList"></div><div class="modal-actions"><button class="btn primary" value="default">Chiudi</button></div></form>
-  </dialog>
-
-
-  <dialog id="updateDialog" class="modal narrow">
-    <form id="updateForm" method="dialog">
-      <input type="hidden" name="caseId">
-      <div class="modal-head"><div><div class="eyebrow">AGGIORNA CASO</div><h2>Nuovo aggiornamento riunione</h2></div><button class="icon-btn" type="button" data-close-dialog="updateDialog">×</button></div>
-      <div class="form-grid">
-        <label class="span2">Aggiornamento / decisione<textarea name="note" rows="4" placeholder="Cosa è emerso durante la riunione?"></textarea></label>
-        <div class="parts-block"><div class="parts-head"><h4>Ricambi aggiornamento</h4><button type="button" class="btn soft" data-add-part="updateParts">+ Aggiungi ricambio</button></div><div class="parts-list" id="updateParts"></div><small class="field-help">Facoltativo · Part Number + Descrizione + Quantità · più righe consentite.</small></div>
-        <div class="attachment-picker"><div class="attachment-picker-head"><h4>Allegati aggiornamento</h4><label class="file-pick-btn">+ Aggiungi file<input id="updateFiles" type="file" multiple></label></div><small class="field-help">Immagini e documenti di qualsiasi natura utili alla riunione.</small><div class="pending-files" id="updateFileList"></div></div>
-        <label class="span2">Nuova azione<textarea name="action" rows="2" placeholder="Nuova azione concordata"></textarea></label>
-        <label>Responsabile<select name="owner" id="updateOwnerSelect"><option value="">Seleziona ente</option></select></label>
-        <label>Scadenza<input name="deadline" type="date"></label>
-        <label>Stato<select name="status"><option>Aperto</option><option>Sospeso</option><option>Risolto</option></select></label>
-      </div>
-      <div class="modal-actions"><button class="btn ghost" type="button" data-close-dialog="updateDialog">Annulla</button><button class="btn primary" value="default">Salva aggiornamento</button></div>
-    </form>
-  </dialog>
-
-  <dialog id="solutionDialog" class="modal wide">
-    <form id="solutionForm" method="dialog">
-      <input type="hidden" name="caseId">
-      <div class="modal-head"><div><div class="eyebrow">SOLUZIONE</div><h2>Aggiorna soluzione</h2></div><button class="icon-btn" type="button" data-close-dialog="solutionDialog">×</button></div>
-      <div class="form-grid">
-        <label class="span2">Soluzione<textarea name="solution" rows="5" placeholder="Descrivi la soluzione definitiva o proposta"></textarea></label>
-        <div class="parts-block"><div class="parts-head"><h4>Ricambi SOLUZIONE</h4><button type="button" class="btn soft" data-add-part="solutionParts">+ Aggiungi ricambio</button></div><div class="parts-list" id="solutionParts"></div><small class="field-help">Part Number + Descrizione + Quantità · più righe consentite.</small></div>
-        <div class="attachment-picker"><div class="attachment-picker-head"><h4>Allegati SOLUZIONE</h4><label class="file-pick-btn">+ Aggiungi file<input id="solutionFiles" type="file" multiple></label></div><small class="field-help">Immagini, PDF, Excel, Word, PowerPoint e altri documenti. I file già presenti restano collegati.</small><div class="pending-files" id="solutionFileList"></div></div>
-      </div>
-      <div class="modal-actions"><button class="btn ghost" type="button" data-close-dialog="solutionDialog">Annulla</button><button class="btn primary" value="default">Salva soluzione</button></div>
-    </form>
-  </dialog>
-
-  <dialog id="dataDialog" class="modal narrow">
-    <form method="dialog">
-      <div class="modal-head"><div><div class="eyebrow">MIGRAZIONE</div><h2>Dati e immagini</h2></div><button class="icon-btn" value="cancel">×</button></div>
-      <div class="data-panel">
-        <p><b>Record:</b> il prototipo è già predisposto per ricevere l'importazione dall'Access.</p>
-        <p><b>Allegati:</b> Anomalia, aggiornamenti e Soluzione accettano immagini e documenti tecnici. Nel prototipo i file sono conservati localmente nel browser tramite IndexedDB; nella versione definitiva saranno nello storage centrale.</p>
-        <button type="button" class="btn soft" id="btnExportJson">Esporta dati prototipo JSON</button>
-        <label class="import-label">Importa JSON<input type="file" id="jsonImport" accept="application/json,.json"></label>
-      </div>
-      <div class="modal-actions"><button class="btn primary" value="default">Chiudi</button></div>
-    </form>
-  </dialog>
-
-  <script>
-const LS_CASES='fa_cases_v2', LS_SCORE='fa_scoring_v2', LS_MEET='fa_meetings_v2';
-const defaultScoring={
-  safety:[['Nessun impatto',1],['Basso',2],['Medio',5],['Alto',8],['Critico',10]],
-  sales:[['Nullo',1],['Basso',2],['Medio',5],['Alto',8],['Critico',10]],
-  urgency:[['Bassa',1],['Moderata',3],['Media',5],['Alta',8],['Immediata',10]],
-  warrantyBands:[[0,1],[1000,2],[5000,3],[10000,4],[20000,5],[30000,6],[50000,7],[75000,8],[100000,9],[150000,10]]
+<header class="topbar">
+  <div class="brand"><div class="brand-badge">MENARINI</div><div class="brand-title">FAILURE ANALYSIS</div></div>
+  <div class="top-actions"><button class="btn btn-primary" id="newCaseTop">+ Nuovo caso</button></div>
+</header>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="nav-item active" data-view="agenda">Agenda riunione <span class="nav-count" id="navOpen">0</span></div>
+    <div class="nav-item" data-view="cases">Tutti i casi</div>
+    <div class="nav-item" data-view="actions">Azioni aperte <span class="nav-count" id="navActions">0</span></div>
+    <div class="nav-item" data-view="meetings">Riunioni</div>
+    <div class="nav-item" data-view="trash">Cestino <span class="nav-count" id="navTrash">0</span></div>
+  </aside>
+  <main class="main" id="app"></main>
+</div>
+<div class="modal-backdrop" id="modalBackdrop"></div>
+<div class="toast" id="toast"></div>
+<script>
+(() => {
+'use strict';
+const MODELS=['Citymood 10','Citymood 12','Citymood 12E','Citymood 18','Citymood 18E','Avancity+ 10','Avancity+ 12','Vivacity','BEV 10','BEV 12'];
+const ENTITIES=['Engineering','Quality','After Sales','Production','Supplier Quality','Purchasing','R&D','Service','Electrical','Body'];
+const CATEGORIES=['Meccanica','Elettrica','HVAC','Carrozzeria','Software','Porte','Freni','Trazione','Altro'];
+const STORE_KEY='menarini_failure_analysis_v1';
+const sample={
+ cases:[
+  {id:'1',sheet:'305',title:'Rumorosità compressore A/C',status:'open',date:'2026-08-19',models:['Citymood 12'],entity:'Quality',category:'HVAC',description:'Rumorosità anomala del compressore A/C dopo alcune ore di esercizio.',parts:[{pn:'AC-44721',desc:'Compressore A/C'}],attachments:[],frequencyCases:17,safety:5,sales:4,warrantyCost:4800,urgency:7,bonus:3,bonusReason:'Cliente strategico coinvolto',currentAction:{text:'Analisi componente restituito',owner:'Supplier Quality',due:'2026-09-09',status:'Aperta'},solution:{text:'',parts:[],attachments:[]},updates:[{id:'u1',date:'2026-09-02',text:'Prova effettuata sul veicolo 2431. Anomalia riprodotta e componente inviato al fornitore.',action:'Analizzare componente restituito',owner:'Supplier Quality',due:'2026-09-09',status:'Aperta',parts:[{pn:'AC-44721',desc:'Compressore A/C',qty:1}],attachments:[]}],deletedAt:null},
+  {id:'2',sheet:'304',title:'Malfunzionamento porta posteriore',status:'suspended',date:'2026-08-11',models:['Citymood 10','Citymood 12'],entity:'Engineering',category:'Porte',description:'Apertura intermittente della porta posteriore in condizioni di pioggia.',parts:[{pn:'PT-99210',desc:'Sensore porta'}],attachments:[],frequencyCases:9,safety:6,sales:5,warrantyCost:2600,urgency:5,bonus:0,bonusReason:'',currentAction:{text:'Attesa nuovo sensore dal fornitore',owner:'Purchasing',due:'2026-09-15',status:'In attesa'},solution:{text:'',parts:[],attachments:[]},updates:[{id:'u2',date:'2026-08-26',text:'Test comparativo completato. Il sensore presenta infiltrazioni.',action:'Richiedere campioni modificati',owner:'Purchasing',due:'2026-09-15',status:'In attesa',parts:[],attachments:[]}],deletedAt:null},
+  {id:'3',sheet:'287',title:'Errore inverter trazione',status:'closed',date:'2026-06-02',models:['BEV 12'],entity:'Electrical',category:'Trazione',description:'Errore sporadico inverter con veicolo fermo.',parts:[],attachments:[],frequencyCases:4,safety:7,sales:3,warrantyCost:1800,urgency:4,bonus:0,bonusReason:'',currentAction:{text:'',owner:'',due:'',status:'Chiusa'},solution:{text:'Aggiornato firmware inverter e sostituito cablaggio su veicoli coinvolti.',parts:[{pn:'INV-CAB-22',desc:'Cablaggio inverter',qty:1}],attachments:[]},updates:[{id:'u3',date:'2026-07-08',text:'Validazione conclusa con esito positivo. Caso chiuso.',action:'',owner:'Electrical',due:'',status:'Chiusa',parts:[],attachments:[]}],deletedAt:null}
+ ], meetings:[]
 };
-const frequencyCoefficient=n=>{
-  n=Math.max(0,Number(n)||0);
-  if(n<5)return 1;
-  if(n<=10)return 2;
-  if(n<=15)return 3;
-  if(n<=20)return 4;
-  if(n<=25)return 5;
-  if(n<=30)return 6;
-  if(n<=35)return 7;
-  if(n<=40)return 8;
-  if(n<=45)return 9;
-  return 10;
-};
-const seedCases=[
- {id:crypto.randomUUID(),ticket:'305',title:'Limp home / anomalia propulsione',description:'Caso importabile dal database storico. Record dimostrativo del layout.',models:['Citymood'],owner:'Engineering',status:'Aperto',score:52,action:'Completare analisi causa radice',deadline:'2026-09-05',created:'2026-08-19',frequencyCases:48,scores:{frequency:10,safety:10,sales:8,warranty:8,urgency:10,bonus:6},bonusReason:'Priorità strategica definita in riunione',anomalyParts:[{partNumber:'PN-EXAMPLE-01',description:'Componente anomalia'}],solution:'',solutionParts:[],history:[['02/09/2026','Aggiornata azione dopo riunione Failure Analysis'],['26/08/2026','Ricevuti dati diagnostici']],images:{problem:[],solution:[]},selected:true},
- {id:crypto.randomUUID(),ticket:'304',title:'Gas leaking Exagon',description:'Perdita gas da verificare con fornitore.',models:['CNG'],owner:'Quality',status:'Aperto',score:41,action:'Analisi componente presso fornitore',deadline:'2026-09-08',created:'2026-08-22',frequencyCases:18,scores:{frequency:4,safety:10,sales:5,warranty:8,urgency:10,bonus:4},bonusReason:'Rischio di escalation con il cliente',anomalyParts:[],solution:'',solutionParts:[],history:[['02/09/2026','Aperta azione al fornitore']],images:{problem:[],solution:[]}},
- {id:crypto.randomUUID(),ticket:'301',title:'Protezione riduttore',description:'Verifica soluzione tecnica.',models:['BEV'],owner:'Engineering',status:'Sospeso',score:32,action:'Attesa esito test',deadline:'2026-09-12',created:'2026-08-01',frequencyCases:8,scores:{frequency:2,safety:5,sales:5,warranty:5,urgency:5,bonus:10},bonusReason:'Da mantenere alta in agenda fino all’esito test',anomalyParts:[],solution:'',solutionParts:[],history:[['29/08/2026','Caso sospeso in attesa test']],images:{problem:[],solution:[]}}
-];
-let cases=JSON.parse(localStorage.getItem(LS_CASES)||'null')||seedCases;
-let scoring=JSON.parse(localStorage.getItem(LS_SCORE)||'null')||defaultScoring;
-let meetings=JSON.parse(localStorage.getItem(LS_MEET)||'[]');
-let modelCatalog=[...new Set(cases.flatMap(c=>c.models||[]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it'));
-let ownerCatalog=[...new Set(cases.map(c=>c.owner).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it'));
-function warrantyCoefficient(cost){
-  const bands=(scoring.warrantyBands||defaultScoring.warrantyBands).slice().sort((a,b)=>a[0]-b[0]);
-  let coeff=1; for(const [min,val] of bands){if(Number(cost)>=Number(min)) coeff=Number(val)||coeff; else break;} return coeff;
-}
+let state=load(); let currentView='agenda'; let currentCaseId=null;
+function load(){try{return JSON.parse(localStorage.getItem(STORE_KEY))||structuredClone(sample)}catch(e){return structuredClone(sample)}}
+function save(){localStorage.setItem(STORE_KEY,JSON.stringify(state)); refreshCounts()}
+function esc(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function fmtDate(d){if(!d)return '—'; const x=new Date(d+'T00:00:00'); return isNaN(x)?d:x.toLocaleDateString('it-IT')}
+function freqScore(n){n=Number(n)||0; if(n<5)return 1;if(n<=10)return 2;if(n<=15)return 3;if(n<=20)return 4;if(n<=25)return 5;if(n<=30)return 6;if(n<=35)return 7;if(n<=40)return 8;if(n<=45)return 9;return 10}
+function warrantyScore(v){v=Number(v)||0;if(v<1000)return 1;if(v<2500)return 2;if(v<5000)return 4;if(v<10000)return 6;if(v<20000)return 8;return 10}
+function total(c){return freqScore(c.frequencyCases)+(Number(c.safety)||0)+(Number(c.sales)||0)+warrantyScore(c.warrantyCost)+(Number(c.urgency)||0)+(Number(c.bonus)||0)}
+function activeCases(){return state.cases.filter(c=>!c.deletedAt)}
+function trashedCases(){return state.cases.filter(c=>c.deletedAt)}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800)}
+function refreshCounts(){document.getElementById('navOpen').textContent=activeCases().filter(c=>c.status==='open').length;document.getElementById('navTrash').textContent=trashedCases().length;document.getElementById('navActions').textContent=activeCases().filter(c=>c.currentAction&&c.currentAction.text&&c.currentAction.status!=='Chiusa').length}
+function setView(v){currentView=v;currentCaseId=null;document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===v));render()}
+function statusLabel(s){return s==='open'?'Aperto':s==='suspended'?'Sospeso':'Risolto'}
+function statusClass(s){return s==='open'?'open':s==='suspended'?'suspended':'closed'}
+function render(){if(currentCaseId){renderCase(currentCaseId);return} if(currentView==='agenda'||currentView==='cases')renderList(); else if(currentView==='actions')renderActions(); else if(currentView==='meetings')renderMeetings(); else renderTrash();}
+function renderList(){const all=activeCases();const opens=all.filter(c=>c.status==='open').length,susp=all.filter(c=>c.status==='suspended').length,closed=all.filter(c=>c.status==='closed').length;const rows=[...all].sort((a,b)=> currentView==='agenda'?total(b)-total(a):Number(b.sheet)-Number(a.sheet));
+ document.getElementById('app').innerHTML=`<div class="page-head"><div><h1 class="page-title">${currentView==='agenda'?'Agenda Failure Analysis':'Archivio casi'}</h1><div class="sub">${currentView==='agenda'?'Casi ordinati automaticamente per TOTALONE':'Tutti i casi, compresi sospesi e risolti'}</div></div><button class="btn btn-blue" id="newCaseBtn">+ Nuovo caso</button></div>
+ <div class="kpis"><div class="kpi"><strong>${all.length}</strong><span>Totale casi</span></div><div class="kpi"><strong>${opens}</strong><span>Aperti</span></div><div class="kpi"><strong>${susp}</strong><span>Sospesi</span></div><div class="kpi"><strong>${closed}</strong><span>Risolti</span></div><div class="kpi"><strong>${trashedCases().length}</strong><span>Nel cestino</span></div></div>
+ <div class="toolbar"><input id="search" placeholder="Cerca scheda, anomalia, modello, ente…"><select id="statusFilter"><option value="">Tutti gli stati</option><option value="open">Aperti</option><option value="suspended">Sospesi</option><option value="closed">Risolti</option></select><select id="modelFilter"><option value="">Tutti i modelli</option>${MODELS.map(m=>`<option>${esc(m)}</option>`).join('')}</select></div>
+ <div class="table-card"><table class="table"><thead><tr><th>Priorità</th><th>Scheda</th><th>ANOMALIA</th><th>Modelli</th><th>Ente</th><th>Azione corrente</th><th>Stato</th></tr></thead><tbody id="caseRows"></tbody></table></div>`;
+ const draw=()=>{const q=document.getElementById('search').value.toLowerCase(),sf=document.getElementById('statusFilter').value,mf=document.getElementById('modelFilter').value;const rr=rows.filter(c=>(!sf||c.status===sf)&&(!mf||c.models.includes(mf))&&(!q||[c.sheet,c.title,c.description,c.entity,...c.models].join(' ').toLowerCase().includes(q)));document.getElementById('caseRows').innerHTML=rr.length?rr.map(c=>`<tr class="clickable" data-id="${c.id}"><td><span class="score-pill">${total(c)}</span></td><td><b>${esc(c.sheet)}</b></td><td>${esc(c.title)}</td><td>${esc(c.models.join(', '))}</td><td>${esc(c.entity||'—')}</td><td>${esc(c.currentAction?.text||'—')}</td><td><span class="status ${statusClass(c.status)}">${statusLabel(c.status)}</span></td></tr>`).join(''):`<tr><td colspan="7" class="empty">Nessun caso trovato</td></tr>`;document.querySelectorAll('#caseRows tr[data-id]').forEach(r=>r.onclick=()=>{currentCaseId=r.dataset.id;render()})};draw();['search','statusFilter','modelFilter'].forEach(id=>document.getElementById(id).addEventListener(id==='search'?'input':'change',draw));document.getElementById('newCaseBtn').onclick=openNewCase;}
+function renderCase(id){const c=state.cases.find(x=>x.id===id);if(!c||c.deletedAt){setView('cases');return}const atts=c.attachments||[], solAtt=c.solution?.attachments||[];
+ document.getElementById('app').innerHTML=`<div class="page-head"><div><button class="btn btn-ghost btn-sm" id="backBtn">← Torna</button><div class="case-id" style="margin-top:12px">Scheda ${esc(c.sheet)}</div><h1 class="page-title">${esc(c.title)}</h1></div><div class="actions"><button class="btn btn-soft" id="updateBtn">Aggiorna riunione</button><button class="btn btn-soft" id="solutionBtn">Modifica soluzione</button><button class="btn btn-danger" id="deleteCaseBtn">Elimina caso</button></div></div>
+ <div class="case-layout"><div class="case-main">
+ <section class="card"><h3 class="section-title">ANOMALIA</h3><div class="meta-grid"><div class="meta"><b>Stato</b><span class="status ${statusClass(c.status)}">${statusLabel(c.status)}</span></div><div class="meta"><b>Data apertura</b>${fmtDate(c.date)}</div><div class="meta"><b>Ente</b>${esc(c.entity||'—')}</div><div class="meta"><b>Categoria</b>${esc(c.category||'—')}</div><div class="meta"><b>Modelli</b>${esc(c.models.join(', ')||'—')}</div><div class="meta"><b>Casi rilevati</b>${Number(c.frequencyCases)||0}</div></div><p style="line-height:1.55">${esc(c.description||'—')}</p>${renderParts(c.parts,false)}<div style="margin-top:14px"><b>Allegati ANOMALIA</b>${renderAttachments(atts,'anomaly',c.id)}</div></section>
+ <section class="card current-action"><h3 class="section-title">Azione corrente</h3>${c.currentAction?.text?`<div style="font-size:18px;font-weight:800">${esc(c.currentAction.text)}</div><div class="action-row"><div><span class="muted">Responsabile</span><br><b>${esc(c.currentAction.owner||'—')}</b></div><div><span class="muted">Scadenza</span><br><b>${fmtDate(c.currentAction.due)}</b></div><div><span class="muted">Stato</span><br><span class="tag">${esc(c.currentAction.status||'—')}</span></div></div>`:`<div class="muted">Nessuna azione corrente.</div>`}</section>
+ <section class="card"><h3 class="section-title">SOLUZIONE</h3>${c.solution?.text?`<p style="line-height:1.55">${esc(c.solution.text)}</p>${renderParts(c.solution.parts,true)}`:`<div class="muted">Soluzione non ancora definita.</div>`}<div style="margin-top:14px"><b>Allegati SOLUZIONE</b>${renderAttachments(solAtt,'solution',c.id)}</div></section>
+ <section class="card"><h3 class="section-title">Storico riunioni</h3>${renderTimeline(c)}</section>
+ <section class="card danger-zone"><h3 class="section-title">Zona eliminazione</h3><div class="muted" style="margin-bottom:10px">Il caso viene spostato nel Cestino e può essere ripristinato.</div><button class="btn btn-danger" id="deleteCaseBottom">Sposta caso nel Cestino</button></section>
+ </div><aside class="case-side"><section class="card score-card"><h3 class="section-title">Scoring</h3><div class="score-total"><div class="muted">TOTALONE</div><strong>${total(c)}</strong></div><div class="score-list"><div class="score-row"><span>Frequenza (${c.frequencyCases||0})</span><b>${freqScore(c.frequencyCases)}</b></div><div class="score-row"><span>Sicurezza</span><b>${c.safety||0}</b></div><div class="score-row"><span>Sales deterrent</span><b>${c.sales||0}</b></div><div class="score-row"><span>Costi garanzia (€ ${Number(c.warrantyCost||0).toLocaleString('it-IT')})</span><b>${warrantyScore(c.warrantyCost)}</b></div><div class="score-row"><span>Urgenza</span><b>${c.urgency||0}</b></div><div class="score-row"><span>Bonus manuale</span><b>+${c.bonus||0}</b></div></div>${c.bonusReason?`<div class="bonus-note">${esc(c.bonusReason)}</div>`:''}</section></aside></div>`;
+ document.getElementById('backBtn').onclick=()=>{currentCaseId=null;render()};document.getElementById('updateBtn').onclick=()=>openUpdate(c);document.getElementById('solutionBtn').onclick=()=>openSolution(c);document.getElementById('deleteCaseBtn').onclick=()=>moveToTrash(c.id);document.getElementById('deleteCaseBottom').onclick=()=>moveToTrash(c.id);bindAttachmentButtons();}
+function renderParts(parts=[],qty){if(!parts.length)return '<div class="muted" style="margin-top:10px">Nessun ricambio indicato.</div>';return `<div style="margin-top:12px"><b>Ricambi</b><table class="parts-table"><thead><tr><th>Part Number</th><th>Descrizione</th>${qty?'<th>Q.tà</th>':''}</tr></thead><tbody>${parts.map(p=>`<tr><td>${esc(p.pn||'—')}</td><td>${esc(p.desc||'—')}</td>${qty?`<td>${esc(p.qty||'—')}</td>`:''}</tr>`).join('')}</tbody></table></div>`}
+function renderAttachments(arr=[],kind,caseId){if(!arr.length)return '<div class="muted" style="margin-top:8px">Nessun allegato.</div>';return `<div class="attach-grid" style="margin-top:8px">${arr.map(a=>`<div class="attachment">${a.type?.startsWith('image/')&&a.dataUrl?`<img src="${a.dataUrl}" alt="${esc(a.name)}">`:`<div class="file-icon">📎</div>`}<div class="attachment-body"><div class="attachment-name" title="${esc(a.name)}">${esc(a.name)}</div><div class="attachment-tools">${a.dataUrl?`<a class="btn btn-soft btn-sm" href="${a.dataUrl}" target="_blank" rel="noopener">Apri</a>`:''}${a.dataUrl?`<a class="btn btn-ghost btn-sm" href="${a.dataUrl}" download="${esc(a.name)}">Scarica</a>`:''}<button class="btn btn-danger btn-sm delete-attachment" data-case="${caseId}" data-kind="${kind}" data-att="${a.id}">Elimina</button></div></div></div>`).join('')}</div>`}
+function bindAttachmentButtons(){document.querySelectorAll('.delete-attachment').forEach(b=>b.onclick=()=>deleteAttachment(b.dataset.case,b.dataset.kind,b.dataset.att))}
+function renderTimeline(c){const u=[...(c.updates||[])].reverse();if(!u.length)return '<div class="muted">Nessun aggiornamento registrato.</div>';return `<div class="timeline">${u.map(x=>`<div class="timeline-item"><div class="timeline-head"><div class="timeline-date">${fmtDate(x.date)}</div><span class="tag">${esc(x.status||'Aggiornamento')}</span></div><div class="timeline-text">${esc(x.text||'')}</div>${x.action||x.owner||x.due?`<div class="timeline-extra"><div class="timeline-box"><b>Azione decisa</b>${esc(x.action||'—')}</div><div class="timeline-box"><b>Responsabile</b>${esc(x.owner||'—')}</div><div class="timeline-box"><b>Scadenza</b>${fmtDate(x.due)}</div></div>`:''}${renderParts(x.parts||[],true)}${x.attachments?.length?`<div style="margin-top:10px"><b>Allegati della riunione</b>${renderAttachments(x.attachments,'update:'+x.id,c.id)}</div>`:''}</div>`).join('')}</div>`}
+function renderActions(){const a=activeCases().filter(c=>c.currentAction?.text&&c.currentAction.status!=='Chiusa').sort((x,y)=>(x.currentAction.due||'9999').localeCompare(y.currentAction.due||'9999'));document.getElementById('app').innerHTML=`<div class="page-head"><div><h1 class="page-title">Azioni aperte</h1><div class="sub">Attività operative emerse dalle riunioni</div></div></div><div class="table-card"><table class="table"><thead><tr><th>Scheda</th><th>ANOMALIA</th><th>Azione</th><th>Responsabile</th><th>Scadenza</th><th>Stato</th></tr></thead><tbody>${a.length?a.map(c=>`<tr class="clickable" data-id="${c.id}"><td><b>${esc(c.sheet)}</b></td><td>${esc(c.title)}</td><td>${esc(c.currentAction.text)}</td><td>${esc(c.currentAction.owner||'—')}</td><td>${fmtDate(c.currentAction.due)}</td><td>${esc(c.currentAction.status)}</td></tr>`).join(''):`<tr><td colspan="6" class="empty">Nessuna azione aperta</td></tr>`}</tbody></table></div>`;document.querySelectorAll('tr[data-id]').forEach(r=>r.onclick=()=>{currentCaseId=r.dataset.id;render()})}
+function renderMeetings(){document.getElementById('app').innerHTML=`<div class="page-head"><div><h1 class="page-title">Riunioni Failure Analysis</h1><div class="sub">Gli snapshot verranno creati automaticamente quando salveremo una riunione.</div></div><button class="btn btn-blue" id="snapshotBtn">Crea snapshot adesso</button></div><div class="card">${state.meetings.length?state.meetings.slice().reverse().map(m=>`<div class="timeline-item"><div class="timeline-date">${fmtDate(m.date)}</div><div>${m.caseCount} casi · ${m.openCount} aperti · ${m.suspendedCount} sospesi · ${m.closedCount} risolti</div></div>`).join(''):'<div class="empty">Nessuna riunione salvata.</div>'}</div>`;document.getElementById('snapshotBtn').onclick=()=>{const cs=activeCases();state.meetings.push({id:crypto.randomUUID(),date:new Date().toISOString().slice(0,10),caseCount:cs.length,openCount:cs.filter(c=>c.status==='open').length,suspendedCount:cs.filter(c=>c.status==='suspended').length,closedCount:cs.filter(c=>c.status==='closed').length});save();render();toast('Snapshot riunione salvato')}}
+function renderTrash(){const a=trashedCases();document.getElementById('app').innerHTML=`<div class="page-head"><div><h1 class="page-title">Cestino</h1><div class="sub">I casi possono essere ripristinati oppure eliminati definitivamente.</div></div></div><div class="table-card"><table class="table"><thead><tr><th>Scheda</th><th>ANOMALIA</th><th>Eliminato il</th><th>Azioni</th></tr></thead><tbody>${a.length?a.map(c=>`<tr><td><b>${esc(c.sheet)}</b></td><td>${esc(c.title)}</td><td>${fmtDate(c.deletedAt?.slice(0,10))}</td><td><button class="btn btn-soft btn-sm restore" data-id="${c.id}">Ripristina</button> <button class="btn btn-danger btn-sm purge" data-id="${c.id}">Elimina definitivamente</button></td></tr>`).join(''):`<tr><td colspan="4" class="empty">Il Cestino è vuoto</td></tr>`}</tbody></table></div>`;document.querySelectorAll('.restore').forEach(b=>b.onclick=()=>{const c=state.cases.find(x=>x.id===b.dataset.id);c.deletedAt=null;save();render();toast('Caso ripristinato')});document.querySelectorAll('.purge').forEach(b=>b.onclick=()=>{if(confirm('Eliminare definitivamente questo caso? Questa operazione non è reversibile.')){state.cases=state.cases.filter(x=>x.id!==b.dataset.id);save();render();toast('Caso eliminato definitivamente')}})}
+function moveToTrash(id){if(!confirm('Spostare questo caso nel Cestino? Potrai ripristinarlo in seguito.'))return;const c=state.cases.find(x=>x.id===id);c.deletedAt=new Date().toISOString();save();currentCaseId=null;setView('agenda');toast('Caso spostato nel Cestino')}
+function deleteAttachment(caseId,kind,attId){if(!confirm('Eliminare questo allegato?'))return;const c=state.cases.find(x=>x.id===caseId);if(kind==='anomaly')c.attachments=(c.attachments||[]).filter(a=>a.id!==attId);else if(kind==='solution')c.solution.attachments=(c.solution.attachments||[]).filter(a=>a.id!==attId);else if(kind.startsWith('update:')){const uid=kind.split(':')[1];const u=(c.updates||[]).find(x=>x.id===uid);if(u)u.attachments=(u.attachments||[]).filter(a=>a.id!==attId)}save();renderCase(caseId);toast('Allegato eliminato')}
+function openModal(title,body,onSave,saveLabel='Salva'){const bd=document.getElementById('modalBackdrop');bd.innerHTML=`<div class="modal" role="dialog" aria-modal="true"><div class="modal-head"><h2>${title}</h2><button class="x" id="modalX">×</button></div><div class="modal-body">${body}</div><div class="modal-foot"><button class="btn btn-ghost" id="modalCancel">Annulla</button><button class="btn btn-blue" id="modalSave">${saveLabel}</button></div></div>`;bd.classList.add('show');const close=()=>{bd.classList.remove('show');bd.innerHTML=''};document.getElementById('modalCancel').onclick=close;document.getElementById('modalX').onclick=close;bd.onclick=e=>{if(e.target===bd)close()};const escKey=e=>{if(e.key==='Escape'){close();document.removeEventListener('keydown',escKey)}};document.addEventListener('keydown',escKey);document.getElementById('modalSave').onclick=()=>onSave(close);return {close}}
+function modelMultiHtml(selected=[]){return `<div class="multi-wrap"><button type="button" class="multi-button" id="modelMultiBtn">Seleziona modelli…</button><div class="multi-panel" id="modelPanel">${MODELS.map(m=>`<label class="multi-option"><input type="checkbox" value="${esc(m)}" ${selected.includes(m)?'checked':''}> ${esc(m)}</label>`).join('')}</div><div class="chips" id="modelChips" style="margin-top:6px"></div></div>`}
+function initModelMulti(){const btn=document.getElementById('modelMultiBtn'),panel=document.getElementById('modelPanel'),chips=document.getElementById('modelChips');const update=()=>{const vals=[...panel.querySelectorAll('input:checked')].map(x=>x.value);chips.innerHTML=vals.map(v=>`<span class="chip">${esc(v)}</span>`).join('');btn.textContent=vals.length?`${vals.length} modello/i selezionato/i`:'Seleziona modelli…'};btn.onclick=()=>panel.classList.toggle('show');panel.querySelectorAll('input').forEach(i=>i.onchange=update);update();return ()=>[...panel.querySelectorAll('input:checked')].map(x=>x.value)}
+function partsEditor(id,qty){return `<div id="${id}"></div><button type="button" class="btn btn-soft btn-sm" data-add-parts="${id}" data-qty="${qty?1:0}">+ Aggiungi ricambio</button>`}
+function addPartRow(containerId,qty,p={}){const d=document.createElement('div');d.className='inline-row'+(qty?' qty':'');d.innerHTML=`<input placeholder="Part Number" class="pn" value="${esc(p.pn||'')}"><input placeholder="Descrizione" class="desc" value="${esc(p.desc||'')}">${qty?`<input type="number" min="1" placeholder="Q.tà" class="qtyv" value="${esc(p.qty||1)}">`:''}<button type="button" class="btn btn-danger btn-sm">×</button>`;d.querySelector('button').onclick=()=>d.remove();document.getElementById(containerId).appendChild(d)}
+function collectParts(id,qty){return [...document.getElementById(id).children].map(r=>({pn:r.querySelector('.pn').value.trim(),desc:r.querySelector('.desc').value.trim(),...(qty?{qty:Number(r.querySelector('.qtyv').value)||1}:{})})).filter(p=>p.pn||p.desc)}
+async function filesToData(fileList){const files=[...fileList];return Promise.all(files.map(f=>new Promise(res=>{const r=new FileReader();r.onload=()=>res({id:crypto.randomUUID(),name:f.name,type:f.type||'application/octet-stream',size:f.size,dataUrl:r.result});r.onerror=()=>res({id:crypto.randomUUID(),name:f.name,type:f.type||'application/octet-stream',size:f.size,dataUrl:null});r.readAsDataURL(f)})))}
+function openNewCase(){const body=`<div class="form-grid"><div class="field"><label class="required">Scheda</label><input id="fSheet" placeholder="es. 306"></div><div class="field"><label class="required">Data apertura</label><input type="date" id="fDate" value="${new Date().toISOString().slice(0,10)}"></div><div class="field full"><label class="required">ANOMALIA</label><input id="fTitle" placeholder="Titolo sintetico dell'anomalia"></div><div class="field full"><label class="required">Descrizione</label><textarea id="fDesc"></textarea></div><div class="field"><label class="required">Modelli coinvolti</label>${modelMultiHtml([])}</div><div class="field"><label class="required">Ente</label><select id="fEntity"><option value="">Seleziona…</option>${ENTITIES.map(x=>`<option>${esc(x)}</option>`).join('')}</select></div><div class="field"><label>Categoria</label><select id="fCategory"><option value="">Seleziona…</option>${CATEGORIES.map(x=>`<option>${esc(x)}</option>`).join('')}</select></div><div class="field"><label>Stato</label><select id="fStatus"><option value="open">Aperto</option><option value="suspended">Sospeso</option></select></div></div><div class="form-section"><div class="form-title">Ricambi ANOMALIA <span class="hint">(facoltativi)</span></div>${partsEditor('newParts',false)}</div><div class="form-section"><div class="form-title">Allegati ANOMALIA</div><input type="file" id="fFiles" multiple><div class="hint">Immagini, PDF, Excel, Word, PowerPoint e altri file tecnici.</div></div><div class="form-section"><div class="form-title">Scoring</div><div class="form-grid"><div class="field"><label class="required">Numero casi / frequenza</label><input type="number" min="0" id="fFreq" value="0"></div><div class="field"><label class="required">Sicurezza (1-10)</label><input type="number" min="1" max="10" id="fSafety" value="1"></div><div class="field"><label class="required">Sales deterrent (1-10)</label><input type="number" min="1" max="10" id="fSales" value="1"></div><div class="field"><label class="required">Costi garanzia (€)</label><input type="number" min="0" step="0.01" id="fWarranty" value="0"></div><div class="field"><label class="required">Urgenza (1-10)</label><input type="number" min="1" max="10" id="fUrgency" value="1"></div><div class="field"><label>Bonus manuale</label><input type="number" min="0" max="50" id="fBonus" value="0"></div><div class="field full"><label>Motivazione bonus</label><input id="fBonusReason"></div></div></div>`;openModal('Nuovo caso',body,async close=>{const getModels=window.__getModels;const models=getModels();const required=[['fSheet','Scheda'],['fTitle','ANOMALIA'],['fDesc','Descrizione'],['fEntity','Ente']];for(const [id,n] of required){if(!document.getElementById(id).value.trim()){alert(`Compila il campo ${n}.`);return}}if(!models.length){alert('Seleziona almeno un modello coinvolto.');return}const atts=await filesToData(document.getElementById('fFiles').files);state.cases.push({id:crypto.randomUUID(),sheet:document.getElementById('fSheet').value.trim(),title:document.getElementById('fTitle').value.trim(),status:document.getElementById('fStatus').value,date:document.getElementById('fDate').value,models,entity:document.getElementById('fEntity').value,category:document.getElementById('fCategory').value,description:document.getElementById('fDesc').value.trim(),parts:collectParts('newParts',false),attachments:atts,frequencyCases:Number(document.getElementById('fFreq').value),safety:Number(document.getElementById('fSafety').value),sales:Number(document.getElementById('fSales').value),warrantyCost:Number(document.getElementById('fWarranty').value),urgency:Number(document.getElementById('fUrgency').value),bonus:Number(document.getElementById('fBonus').value),bonusReason:document.getElementById('fBonusReason').value.trim(),currentAction:{text:'',owner:'',due:'',status:'Aperta'},solution:{text:'',parts:[],attachments:[]},updates:[],deletedAt:null});save();close();render();toast('Nuovo caso creato')});window.__getModels=initModelMulti();document.querySelector('[data-add-parts="newParts"]').onclick=()=>addPartRow('newParts',false)}
+function openUpdate(c){const body=`<div class="form-grid"><div class="field"><label>Data riunione</label><input type="date" id="uDate" value="${new Date().toISOString().slice(0,10)}"></div><div class="field"><label>Stato caso</label><select id="uCaseStatus"><option value="open" ${c.status==='open'?'selected':''}>Aperto</option><option value="suspended" ${c.status==='suspended'?'selected':''}>Sospeso</option><option value="closed" ${c.status==='closed'?'selected':''}>Risolto</option></select></div><div class="field full"><label class="required">Aggiornamento</label><textarea id="uText" placeholder="Cosa è emerso / cosa è stato deciso"></textarea></div><div class="field full"><label>Azione corrente</label><input id="uAction" value="${esc(c.currentAction?.text||'')}"></div><div class="field"><label>Responsabile</label><select id="uOwner"><option value="">—</option>${ENTITIES.map(x=>`<option ${x===c.currentAction?.owner?'selected':''}>${esc(x)}</option>`).join('')}</select></div><div class="field"><label>Scadenza</label><input type="date" id="uDue" value="${esc(c.currentAction?.due||'')}"></div><div class="field"><label>Stato azione</label><select id="uActionStatus"><option>Aperta</option><option>In attesa</option><option>Completata</option><option>Chiusa</option></select></div></div><div class="form-section"><div class="form-title">Ricambi discussi / richiesti</div>${partsEditor('updateParts',true)}</div><div class="form-section"><div class="form-title">Allegati aggiornamento</div><input type="file" id="uFiles" multiple></div>`;openModal('Aggiorna riunione',body,async close=>{const txt=document.getElementById('uText').value.trim();if(!txt){alert('Inserisci un aggiornamento prima di salvare.');return}const atts=await filesToData(document.getElementById('uFiles').files);const u={id:crypto.randomUUID(),date:document.getElementById('uDate').value,text:txt,action:document.getElementById('uAction').value.trim(),owner:document.getElementById('uOwner').value,due:document.getElementById('uDue').value,status:document.getElementById('uActionStatus').value,parts:collectParts('updateParts',true),attachments:atts};c.updates.push(u);c.status=document.getElementById('uCaseStatus').value;c.currentAction={text:u.action,owner:u.owner,due:u.due,status:u.status};save();close();renderCase(c.id);toast('Aggiornamento salvato')});document.querySelector('[data-add-parts="updateParts"]').onclick=()=>addPartRow('updateParts',true)}
+function openSolution(c){const body=`<div class="form-grid"><div class="field full"><label>Descrizione soluzione</label><textarea id="sText">${esc(c.solution?.text||'')}</textarea></div></div><div class="form-section"><div class="form-title">Ricambi SOLUZIONE</div>${partsEditor('solutionParts',true)}</div><div class="form-section"><div class="form-title">Allegati SOLUZIONE</div><input type="file" id="sFiles" multiple><div class="hint">Gli allegati esistenti non vengono rimossi; puoi eliminarli direttamente dalla scheda.</div></div>`;openModal('Modifica soluzione',body,async close=>{const newAtt=await filesToData(document.getElementById('sFiles').files);c.solution=c.solution||{text:'',parts:[],attachments:[]};c.solution.text=document.getElementById('sText').value.trim();c.solution.parts=collectParts('solutionParts',true);c.solution.attachments=[...(c.solution.attachments||[]),...newAtt];save();close();renderCase(c.id);toast('Soluzione aggiornata')});(c.solution?.parts||[]).forEach(p=>addPartRow('solutionParts',true,p));document.querySelector('[data-add-parts="solutionParts"]').onclick=()=>addPartRow('solutionParts',true)}
 
-// Compatibilità con dati salvati da versioni precedenti del prototipo.
-cases=cases.map(c=>{
-  if(!c.images) c.images={problem:[],solution:[]};
-  if(!c.attachments) c.attachments={anomaly:[],solution:[]};
-  if(!Array.isArray(c.attachments.anomaly)) c.attachments.anomaly=[];
-  if(!Array.isArray(c.attachments.solution)) c.attachments.solution=[];
-  if(!Array.isArray(c.anomalyParts)) c.anomalyParts=[];
-  if(!Array.isArray(c.solutionParts)) c.solutionParts=[];
-  if(c.solution==null) c.solution='';
-  if(c.warrantyCost==null) c.warrantyCost=0;
-  if(c.frequencyCases==null){
-    c.frequencyCases=0;
-    if(c.scores) c.scores.frequency=frequencyCoefficient(0);
-    c.score=c.scores?Object.values(c.scores).reduce((a,b)=>a+(Number(b)||0),0):(c.score||0);
-  }
-  return c;
-});
-const $=s=>document.querySelector(s);
-const dateIT=s=>s?new Date(s+'T12:00:00').toLocaleDateString('it-IT'):'—';
-const priorityClass=n=>n>=40?'high':n>=25?'medium':'low';
-const priorityLabel=n=>n>=40?'Alta':n>=25?'Media':'Bassa';
-function save(){localStorage.setItem(LS_CASES,JSON.stringify(cases));localStorage.setItem(LS_SCORE,JSON.stringify(scoring));localStorage.setItem(LS_MEET,JSON.stringify(meetings));}
-function render(){
-  const q=$('#search').value.toLowerCase(), st=$('#filterStatus').value, p=$('#filterPriority').value;
-  let list=cases.filter(c=>[c.ticket,c.title,c.owner,...c.models].join(' ').toLowerCase().includes(q));
-  if(st) list=list.filter(c=>c.status===st); if(p) list=list.filter(c=>priorityClass(c.score)===p);
-  list.sort((a,b)=>b.score-a.score);
-  $('#caseRows').innerHTML=list.map(c=>`<tr data-id="${c.id}"><td><input type="checkbox" class="rowcheck" data-id="${c.id}" ${c.selected?'checked':''}></td><td><span class="priority ${priorityClass(c.score)}">${c.score}</span><div class="muted">${priorityLabel(c.score)}</div></td><td><b>${c.ticket}</b></td><td>${c.title}</td><td>${c.models.join(', ')||'—'}</td><td>${c.action||'—'}</td><td>${c.owner||'—'}</td><td>${dateIT(c.deadline)}</td><td><span class="status ${c.status.toLowerCase()}">${c.status}</span></td></tr>`).join('');
-  $('#countLabel').textContent=`${list.length} casi`;
-  const open=cases.filter(c=>c.status==='Aperto').length, suspended=cases.filter(c=>c.status==='Sospeso').length, solved=cases.filter(c=>c.status==='Risolto').length, due=cases.filter(c=>c.deadline&&c.status!=='Risolto'&&new Date(c.deadline)<new Date()).length, high=cases.filter(c=>c.status!=='Risolto'&&c.score>=40).length;
-  $('#metrics').innerHTML=[['Casi aperti',open,'in agenda'],['Alta priorità',high,'TOTALONE ≥ 40'],['Azioni scadute',due,'da verificare'],['Sospesi',suspended,'in attesa'],['Risolti',solved,'archivio']].map(x=>`<div class="metric"><div class="k">${x[0]}</div><div class="v">${x[1]}</div><div class="s">${x[2]}</div></div>`).join('');
-  bindRows();
-}
-function bindRows(){
-  document.querySelectorAll('tbody tr').forEach(r=>r.addEventListener('click',e=>{if(e.target.classList.contains('rowcheck')) return; openCase(r.dataset.id)}));
-  document.querySelectorAll('.rowcheck').forEach(cb=>cb.addEventListener('change',e=>{let c=cases.find(x=>x.id===cb.dataset.id);c.selected=cb.checked;save()}));
-}
-function openAttachmentDB(){return new Promise((resolve,reject)=>{const r=indexedDB.open('FailureAnalysisFiles',1);r.onupgradeneeded=()=>{const db=r.result;if(!db.objectStoreNames.contains('files'))db.createObjectStore('files',{keyPath:'id'});};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});}
-async function persistFiles(fileList){const files=[...fileList||[]];if(!files.length)return[];const db=await openAttachmentDB();const tx=db.transaction('files','readwrite'),store=tx.objectStore('files');const meta=[];for(const f of files){const id=crypto.randomUUID();store.put({id,blob:f,name:f.name,type:f.type||'application/octet-stream',size:f.size,created:new Date().toISOString()});meta.push({id,name:f.name,type:f.type||'application/octet-stream',size:f.size});}await new Promise((res,rej)=>{tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});db.close();return meta;}
-async function getAttachmentBlob(id){const db=await openAttachmentDB();const tx=db.transaction('files','readonly');const req=tx.objectStore('files').get(id);const row=await new Promise((res,rej)=>{req.onsuccess=()=>res(req.result);req.onerror=()=>rej(req.error)});db.close();return row||null;}
-const isImageMeta=a=>String(a?.type||'').startsWith('image/');
-const fmtSize=n=>{n=Number(n)||0;if(n<1024)return n+' B';if(n<1048576)return (n/1024).toFixed(1)+' KB';return (n/1048576).toFixed(1)+' MB';};
-function attachmentSection(items,title,sectionKey){items=items||[];const imgs=items.filter(isImageMeta),docs=items.filter(x=>!isImageMeta(x));return `<div class="case-section"><h3>${esc(title)}</h3>${!items.length?'<div class="attachment-empty">Nessun allegato.</div>':''}${imgs.length?`<div class="attachment-images">${imgs.map(a=>`<div class="attachment-image"><img data-blob-img="${a.id}" alt="${esc(a.name)}"><div class="cap"><span>${esc(a.name)}</span><button class="file-action" data-attachment-open="${a.id}" type="button">Apri</button></div></div>`).join('')}</div>`:''}${docs.length?`<div class="attachment-files">${docs.map(a=>`<div class="attachment-file"><div class="file-icon">${esc((a.name.split('.').pop()||'FILE').slice(0,5).toUpperCase())}</div><div class="file-meta"><div class="file-name">${esc(a.name)}</div><div class="file-sub">${esc(a.type||'File')} · ${fmtSize(a.size)}</div></div><div class="file-actions"><button class="file-action" data-attachment-open="${a.id}" type="button">Apri</button><button class="file-action" data-attachment-download="${a.id}" data-name="${esc(a.name)}" type="button">Scarica</button></div></div>`).join('')}</div>`:''}</div>`;}
-async function hydrateAttachments(root=document){for(const img of root.querySelectorAll('img[data-blob-img]')){try{const row=await getAttachmentBlob(img.dataset.blobImg);if(row?.blob){const u=URL.createObjectURL(row.blob);img.src=u;img.onload=()=>URL.revokeObjectURL(u);}}catch(e){}}
-root.querySelectorAll('[data-attachment-open]').forEach(b=>b.onclick=async()=>{const row=await getAttachmentBlob(b.dataset.attachmentOpen);if(!row?.blob){alert('File non disponibile in questo browser.');return;}const u=URL.createObjectURL(row.blob);window.open(u,'_blank');setTimeout(()=>URL.revokeObjectURL(u),60000);});
-root.querySelectorAll('[data-attachment-download]').forEach(b=>b.onclick=async()=>{const row=await getAttachmentBlob(b.dataset.attachmentDownload);if(!row?.blob){alert('File non disponibile in questo browser.');return;}const u=URL.createObjectURL(row.blob),a=document.createElement('a');a.href=u;a.download=b.dataset.name||row.name||'allegato';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);});}
-function renderPendingFiles(input,listId){const box=document.getElementById(listId);if(!box)return;box.innerHTML='';[...(input.files||[])].forEach(f=>{const row=document.createElement('div');row.className='pending-file';const lead=document.createElement(isImageMeta({type:f.type})?'img':'div');if(lead.tagName==='IMG'){lead.className='pending-file-thumb';const u=URL.createObjectURL(f);lead.src=u;lead.onload=()=>URL.revokeObjectURL(u);}else{lead.className='file-icon';lead.textContent=(f.name.split('.').pop()||'FILE').slice(0,5).toUpperCase();}row.appendChild(lead);const meta=document.createElement('div');meta.className='file-meta';meta.innerHTML=`<div class="file-name">${esc(f.name)}</div><div class="file-sub">${esc(f.type||'File')} · ${fmtSize(f.size)}</div>`;row.appendChild(meta);box.appendChild(row);});}
-
-function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
-function normalizeParts(parts,withQty=false){
- return (parts||[]).map(p=>({partNumber:String(p.partNumber||'').trim(),description:String(p.description||'').trim(),...(withQty?{quantity:Number(p.quantity)||0}:{})})).filter(p=>p.partNumber||p.description||(withQty&&p.quantity));
-}
-function partsFromForm(form,prefix,withQty=false){
- const pn=[...form.querySelectorAll(`[name="${prefix}PartNumber"]`)].map(x=>x.value);
- const ds=[...form.querySelectorAll(`[name="${prefix}Description"]`)].map(x=>x.value);
- const qs=withQty?[...form.querySelectorAll(`[name="${prefix}Quantity"]`)].map(x=>x.value):[];
- return normalizeParts(pn.map((v,i)=>({partNumber:v,description:ds[i]||'',...(withQty?{quantity:qs[i]||0}:{})})),withQty);
-}
-function addPartRow(containerId,withQty=false,data={}){
- const box=document.getElementById(containerId); if(!box)return;
- const row=document.createElement('div'); row.className='part-row'+(withQty?' with-qty':'');
- const prefix=containerId==='anomalyParts'?'anomaly':containerId==='solutionParts'?'solution':'update';
- row.innerHTML=`<input name="${prefix}PartNumber" placeholder="Part Number" value="${esc(data.partNumber||'')}"><input name="${prefix}Description" placeholder="Descrizione ricambio" value="${esc(data.description||'')}">${withQty?`<input name="${prefix}Quantity" type="number" min="0" step="1" placeholder="Qtà" value="${data.quantity??''}">`:''}<button type="button" class="part-remove" title="Rimuovi">×</button>`;
- row.querySelector('.part-remove').onclick=()=>row.remove(); box.appendChild(row);
-}
-function resetPartRows(){['anomalyParts','solutionParts','updateParts'].forEach(id=>{const b=document.getElementById(id);if(b)b.innerHTML='';});}
-function partsTable(parts,withQty=false){
- const rows=normalizeParts(parts,withQty); if(!rows.length)return '<div class="parts-empty">Nessun ricambio indicato.</div>';
- return `<table class="parts-table"><thead><tr><th>Part Number</th><th>Descrizione</th>${withQty?'<th>Qtà</th>':''}</tr></thead><tbody>${rows.map(p=>`<tr><td><b>${esc(p.partNumber||'—')}</b></td><td>${esc(p.description||'—')}</td>${withQty?`<td>${p.quantity||'—'}</td>`:''}</tr>`).join('')}</tbody></table>`;
-}
-function renderHistory(history){
- if(!history.length) return '<div class="timeline-empty">Nessun aggiornamento registrato.</div>';
- return history.map(h=>{
-   if(Array.isArray(h)) return `<div class="timeline-item"><div class="timeline-date">${esc(h[0])}</div><div class="timeline-note">${esc(h[1])}</div></div>`;
-   const changes=[];
-   if(h.action!==undefined) changes.push(`<div class="timeline-change"><span>Azione concordata</span><strong>${esc(h.action||'Nessuna')}</strong></div>`);
-   if(h.owner!==undefined) changes.push(`<div class="timeline-change"><span>Responsabile</span><strong>${esc(h.owner||'—')}</strong></div>`);
-   if(h.deadline!==undefined) changes.push(`<div class="timeline-change"><span>Scadenza</span><strong>${esc(dateIT(h.deadline))}</strong></div>`);
-   if(h.status!==undefined) changes.push(`<div class="timeline-change"><span>Stato caso</span><strong>${esc(h.status||'—')}</strong></div>`);
-   const parts=(h.parts&&h.parts.length)?`<div class="timeline-parts"><div class="timeline-parts-title">Ricambi discussi / richiesti</div>${partsTable(h.parts,true)}</div>`:'';
-   const atts=(h.attachments&&h.attachments.length)?attachmentSection(h.attachments,'Allegati riunione','history'):'';
-   return `<div class="timeline-item"><div class="timeline-date">${esc(h.date||'')}</div><div class="timeline-note">${esc(h.note||'Aggiornamento riunione')}</div>${changes.length?`<div class="timeline-changes">${changes.join('')}</div>`:''}${parts}${atts}</div>`;
- }).join('');
-}
-
-function openCase(id){
- const c=cases.find(x=>x.id===id); if(!c)return;
- window.currentCaseId=id;
- $('#casePageTitle').textContent=`${c.ticket} — ${c.title}`;
- const breakdown=Object.entries(c.scores||{}).map(([k,v])=>`<tr><td>${({frequency:'Frequenza',safety:'Sicurezza',sales:'Sales deterrent',warranty:'Costi garanzia',urgency:'Urgenza',bonus:'Bonus manuale'})[k]||k}</td><td>${v}</td></tr>`).join('');
- $('#casePageBody').innerHTML=`<div class="case-summary"><div class="summary-grid"><div class="summary-box"><span>STATO</span><strong>${c.status}</strong></div><div class="summary-box"><span>TOTALONE</span><strong class="priority ${priorityClass(c.score)}">${c.score} — ${priorityLabel(c.score)}</strong></div><div class="summary-box"><span>APERTURA</span><strong>${dateIT(c.created)}</strong></div></div></div>
- <div class="case-detail-grid">
-   <div class="case-main-column">
-     <div class="case-section"><h3>ANOMALIA</h3><p>${esc(c.description||'—')}</p><p><b>Modelli:</b> ${esc(c.models.join(', ')||'—')} &nbsp; · &nbsp; <b>Responsabile:</b> ${esc(c.owner||'—')}</p><h4>Ricambi coinvolti</h4>${partsTable(c.anomalyParts,false)}</div>
-     ${attachmentSection(c.attachments?.anomaly||[],'Allegati ANOMALIA','anomaly')}
-     <div class="case-section"><h3>Azione corrente</h3><div class="action-card"><b>${esc(c.action||'Nessuna azione')}</b><div class="muted">${esc(c.owner||'—')} · scadenza ${dateIT(c.deadline)}</div></div></div>
-     <div class="case-section"><div class="section-title-actions"><h3>SOLUZIONE</h3><button class="btn soft" type="button" id="editSolutionBtn">Modifica soluzione</button></div><div class="solution-text">${esc(c.solution||'—')}</div><h4>Ricambi soluzione</h4>${partsTable(c.solutionParts,true)}</div>
-     ${attachmentSection(c.attachments?.solution||[],'Allegati SOLUZIONE','solution')}
-     <div class="case-section"><h3>Storico riunioni</h3><p class="muted">Verbale operativo del caso: decisioni, azioni, responsabili, scadenze e stato.</p>${renderHistory(c.history||[])}</div>
-   </div>
-   <aside class="case-score-side">
-     <h3>Scoring</h3>
-     <p class="muted">Frequenza: <b>${c.frequencyCases ?? '—'} casi</b>${c.warrantyCost!=null ? `<br>Costi garanzia: <b>€ ${Number(c.warrantyCost).toLocaleString('it-IT')}</b>`:''}${c.bonusReason ? `<br>Bonus: <b>${esc(c.bonusReason)}</b>` : ''}</p>
-     <table class="score-table"><tbody>${breakdown}</tbody></table>
-     <div class="score-total"><span>TOTALONE</span><strong>${c.score}</strong></div>
-   </aside>
- </div>`;
- $('#dashboardView').classList.add('hidden'); $('#casePage').classList.remove('hidden');
- $('#pageUpdateCase').onclick=()=>openUpdate(c.id);
- const es=$('#editSolutionBtn'); if(es)es.onclick=()=>openSolution(c.id);
- hydrateAttachments($('#casePageBody'));
- window.scrollTo({top:0,behavior:'instant'});
-}
-function showAgenda(){window.currentCaseId=null;$('#casePage').classList.add('hidden');$('#dashboardView').classList.remove('hidden');window.scrollTo({top:0,behavior:'instant'});}
-function openUpdate(id){
-  const c=cases.find(x=>x.id===id); if(!c)return;
-  populateOwnerSelects();
-  const f=$('#updateForm'); f.elements.caseId.value=id; f.elements.note.value=''; f.elements.action.value=c.action||''; f.elements.owner.value=c.owner||''; f.elements.deadline.value=c.deadline||''; f.elements.status.value=c.status||'Aperto';
-  const up=document.getElementById('updateParts'); if(up)up.innerHTML=''; const fi=$('#updateFiles');if(fi)fi.value='';const fl=$('#updateFileList');if(fl)fl.innerHTML='';
-  $('#updateDialog').showModal();
-}
-function openSolution(id){
- const c=cases.find(x=>x.id===id);if(!c)return;const f=$('#solutionForm');f.elements.caseId.value=id;f.elements.solution.value=c.solution||'';const box=$('#solutionParts');if(box)box.innerHTML='';(c.solutionParts||[]).forEach(p=>addPartRow('solutionParts',true,p));const inp=$('#solutionFiles');if(inp)inp.value='';const list=$('#solutionFileList');if(list)list.innerHTML='';$('#solutionDialog').showModal();
-}
-function populateCatalogs(){
-  modelCatalog=[...new Set([...modelCatalog,...cases.flatMap(c=>c.models||[]).filter(Boolean)])].sort((a,b)=>a.localeCompare(b,'it'));
-  ownerCatalog=[...new Set([...ownerCatalog,...cases.map(c=>c.owner).filter(Boolean)])].sort((a,b)=>a.localeCompare(b,'it'));
-  const box=$('#modelsOptions'); if(box) box.innerHTML=modelCatalog.map(m=>`<label class="multi-option"><input type="checkbox" name="models" value="${esc(m)}"><span>${esc(m)}</span></label>`).join('') || '<div class="muted" style="padding:8px">Anagrafica MODELLI in attesa di importazione.</div>';
-  populateOwnerSelects(); updateModelsSummary();
-}
-function populateOwnerSelects(){
-  ['#ownerSelect','#updateOwnerSelect'].forEach(id=>{const sel=$(id); if(!sel)return; const current=sel.value; sel.innerHTML='<option value="">Seleziona ente</option>'+ownerCatalog.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join(''); if(ownerCatalog.includes(current))sel.value=current;});
-}
-function updateModelsSummary(){const checked=[...document.querySelectorAll('#modelsOptions input:checked')].map(x=>x.value);const sum=$('#modelsSummary'); if(sum) sum.textContent=checked.length?checked.join(', '):'Seleziona uno o più modelli';}
-function populateScoreSelects(){document.querySelectorAll('.score-select').forEach(sel=>{let key=sel.name; sel.innerHTML=(scoring[key]||[]).map(([label,val])=>`<option value="${val}">${label} — coeff. ${val}</option>`).join('')}); populateCatalogs(); updateScorePreview();}
-function updateScorePreview(){let f=new FormData($('#caseForm')); const freqCases=Number(f.get('frequencyCases'))||0; const freq=frequencyCoefficient(freqCases); const warrantyCost=Number(f.get('warrantyCost'))||0; const warranty=warrantyCoefficient(warrantyCost); let sum=freq+warranty+['safety','sales','urgency','bonus'].reduce((a,k)=>a+(Number(f.get(k))||0),0);$('#scorePreview').textContent=sum; const h=$('#frequencyHelp'); if(h) h.textContent=`Coefficiente frequenza: ${freq}`; const wh=$('#warrantyHelp'); if(wh) wh.textContent=`Costo reale € ${warrantyCost.toLocaleString('it-IT')} · coefficiente provvisorio ${warranty} (fasce da validare/importare dall’Access)`;}
-function scoringEditor(){const labels={safety:'Sicurezza',sales:'Sales deterrent',urgency:'Urgenza'}; $('#scoringEditor').innerHTML=['safety','sales','urgency'].map(k=>`<div class="score-group" data-key="${k}"><h3>${labels[k]}</h3>${scoring[k].map((r,i)=>`<div class="score-line"><input data-i="${i}" data-t="label" value="${r[0]}"><input type="number" data-i="${i}" data-t="value" value="${r[1]}"></div>`).join('')}</div>`).join('')+`<div class="score-group"><h3>Costi garanzia (€)</h3><p class="muted">Nel nuovo caso si inserisce il costo numerico reale. Le fasce coefficiente saranno sostituite con quelle esatte dell'Access.</p></div>`;}
-function exportPPT(list){
- if(typeof PptxGenJS==='undefined'){alert('Libreria PowerPoint non disponibile: serve connessione internet per caricare PptxGenJS.');return}
- const pptx=new PptxGenJS();pptx.layout='LAYOUT_WIDE';pptx.author='MENARINI Failure Analysis';pptx.subject='Failure Analysis';pptx.title='Failure Analysis';pptx.company='MENARINI';
- let s=pptx.addSlide();s.background={color:'003F74'};s.addText('MENARINI',{x:.7,y:.55,w:3,h:.5,fontSize:24,bold:true,color:'FFFFFF'});s.addText('FAILURE ANALYSIS',{x:.7,y:2.1,w:7,h:.7,fontSize:30,bold:true,color:'FFFFFF'});s.addText(new Date().toLocaleDateString('it-IT'),{x:.7,y:3,w:4,h:.4,fontSize:16,color:'DCEAF4'});
- let ag=pptx.addSlide();ag.addText('Agenda Failure Analysis',{x:.6,y:.4,w:6,h:.5,fontSize:24,bold:true,color:'003F74'});let rows=[['Priorità','Scheda','ANOMALIA','Responsabile','Scadenza'],...list.sort((a,b)=>b.score-a.score).map(c=>[String(c.score),c.ticket,c.title,c.owner||'',dateIT(c.deadline)])];ag.addTable(rows,{x:.55,y:1.15,w:12.2,h:5.2,border:{type:'solid',color:'D7E1E8',pt:1},fontSize:12,fill:'FFFFFF',color:'172533',rowH:.36,margin:.08,bold:false});
- list.forEach(c=>{let sl=pptx.addSlide();sl.addShape(pptx.ShapeType.rect,{x:0,y:0,w:13.333,h:.8,fill:{color:'003F74'},line:{color:'003F74'}});sl.addText(`${c.ticket} — ${c.title}`,{x:.55,y:.18,w:9.5,h:.35,fontSize:20,bold:true,color:'FFFFFF'});sl.addText(`PRIORITÀ ${c.score} — ${priorityLabel(c.score).toUpperCase()}`,{x:10.1,y:.18,w:2.6,h:.35,fontSize:14,bold:true,color:'FFFFFF',align:'right'});sl.addText('ANOMALIA',{x:.6,y:1.15,w:2,h:.3,fontSize:16,bold:true,color:'003F74'});sl.addText(c.description||'—',{x:.6,y:1.55,w:12,h:1,fontSize:13,color:'172533',breakLine:false});sl.addText('Azione aperta',{x:.6,y:2.8,w:2.5,h:.3,fontSize:16,bold:true,color:'003F74'});sl.addText(c.action||'—',{x:.6,y:3.2,w:8.3,h:.75,fontSize:14,bold:true,color:'172533'});sl.addText(`Responsabile: ${c.owner||'—'}\nScadenza: ${dateIT(c.deadline)}\nModelli: ${c.models.join(', ')||'—'}`,{x:9.2,y:3.0,w:3.3,h:1.2,fontSize:12,color:'405463'});sl.addText('Ultimi aggiornamenti',{x:.6,y:4.55,w:3,h:.3,fontSize:16,bold:true,color:'003F74'});sl.addText((c.history||[]).slice(0,4).map(h=>Array.isArray(h)?`${h[0]} — ${h[1]}`:`${h.date} — ${h.note}${h.action?` | Azione: ${h.action}`:''}`).join('\n')||'—',{x:.6,y:4.95,w:12,h:1.5,fontSize:12,color:'172533',breakLine:false});});
- pptx.writeFile({fileName:`Failure_Analysis_${new Date().toISOString().slice(0,10)}.pptx`});
-}
-$('#meetingDate').textContent=`Riunione del ${new Date().toLocaleDateString('it-IT',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}`;
-['#search','#filterStatus','#filterPriority'].forEach(x=>$(x).addEventListener('input',render));
-$('#btnNewCase').onclick=()=>{populateScoreSelects();const a=document.getElementById('anomalyParts');if(a)a.innerHTML='';const fi=$('#newAnomalyFiles');if(fi)fi.value='';const fl=$('#newAnomalyFileList');if(fl)fl.innerHTML='';$('#caseDialog').showModal()};
-$('#caseForm').addEventListener('input',updateScorePreview);
-$('#caseForm').addEventListener('submit',async e=>{e.preventDefault();let f=new FormData(e.target);const frequencyCases=+f.get('frequencyCases')||0;const warrantyCost=+f.get('warrantyCost')||0;let scores={frequency:frequencyCoefficient(frequencyCases),safety:+f.get('safety'),sales:+f.get('sales'),warranty:warrantyCoefficient(warrantyCost),urgency:+f.get('urgency'),bonus:+f.get('bonus')||0};let score=Object.values(scores).reduce((a,b)=>a+b,0);const models=f.getAll('models').map(x=>String(x).trim()).filter(Boolean);const anomalyParts=partsFromForm(e.target,'anomaly',false);let attachments=[];try{attachments=await persistFiles($('#newAnomalyFiles')?.files);}catch(err){alert('Impossibile salvare gli allegati: '+err.message);return;}cases.push({id:crypto.randomUUID(),ticket:f.get('ticket'),title:f.get('title'),description:f.get('description'),anomalyParts,solution:'',solutionParts:[],models,owner:f.get('owner'),status:f.get('status'),score,frequencyCases,warrantyCost,bonusReason:f.get('bonusReason')||'',action:f.get('action'),deadline:f.get('deadline'),created:new Date().toISOString().slice(0,10),scores,history:[[new Date().toLocaleDateString('it-IT'),'Caso creato']],attachments:{anomaly:attachments,solution:[]},images:{problem:[],solution:[]},selected:true});save();render();e.target.reset();resetPartRows();$('#modelsDropdown').removeAttribute('open');populateCatalogs();$('#caseDialog').close('saved');});
-$('#btnScoring').onclick=()=>{scoringEditor();$('#scoringDialog').showModal()};
-$('#scoringForm').addEventListener('submit',e=>{if(e.submitter?.value==='cancel')return;document.querySelectorAll('.score-group[data-key]').forEach(g=>{let k=g.dataset.key;let rows=[...g.querySelectorAll('.score-line')].map(line=>[line.querySelector('[data-t=label]').value,+line.querySelector('[data-t=value]').value]);scoring[k]=rows});save();});
-$('#btnMeetingSnapshot').onclick=()=>{meetings.unshift({date:new Date().toISOString(),cases:JSON.parse(JSON.stringify(cases))});save();alert('Snapshot riunione salvato.')};
-$('#btnMeetings').onclick=()=>{$('#meetingsList').innerHTML=meetings.length?meetings.map((m,i)=>`<div class="meeting-item"><div><b>${new Date(m.date).toLocaleString('it-IT')}</b><div class="muted">${m.cases.length} casi</div></div><span class="pill">Snapshot ${meetings.length-i}</span></div>`).join(''):'<div class="notice">Nessuna riunione salvata.</div>';$('#meetingsDialog').showModal()};
-$('#btnExportSelected').onclick=()=>exportPPT(cases.filter(c=>c.selected));$('#btnExportAll').onclick=()=>exportPPT(cases.filter(c=>c.status!=='Risolto'));
-$('#updateForm').addEventListener('submit',async e=>{
-  e.preventDefault();
-  const f=new FormData(e.target), c=cases.find(x=>x.id===f.get('caseId')); if(!c)return;
-  const note=String(f.get('note')||'').trim();
-  if(!note){alert('Inserisci un aggiornamento prima di salvare.');e.target.elements.note.focus();return;}
-  const nextAction=String(f.get('action')||'').trim(), nextOwner=String(f.get('owner')||'').trim(), nextDeadline=String(f.get('deadline')||''), nextStatus=String(f.get('status')||'Aperto');
-  const updateParts=partsFromForm(e.target,'update',true);let attachments=[];try{attachments=await persistFiles($('#updateFiles')?.files);}catch(err){alert('Impossibile salvare gli allegati: '+err.message);return;}
-  c.history=c.history||[];
-  c.history.unshift({date:new Date().toLocaleDateString('it-IT'),note,action:nextAction,owner:nextOwner,deadline:nextDeadline,status:nextStatus,parts:updateParts,attachments});
-  c.action=nextAction; c.owner=nextOwner; c.deadline=nextDeadline; c.status=nextStatus;
-  save(); render(); $('#updateDialog').close('saved'); openCase(c.id);
-});
-$('#solutionForm').addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(e.target),c=cases.find(x=>x.id===f.get('caseId'));if(!c)return;let added=[];try{added=await persistFiles($('#solutionFiles')?.files);}catch(err){alert('Impossibile salvare gli allegati: '+err.message);return;}c.solution=String(f.get('solution')||'').trim();c.solutionParts=partsFromForm(e.target,'solution',true);c.attachments=c.attachments||{anomaly:[],solution:[]};c.attachments.solution=[...(c.attachments.solution||[]),...added];c.history=c.history||[];c.history.unshift({date:new Date().toLocaleDateString('it-IT'),note:'Soluzione aggiornata',action:c.action,owner:c.owner,deadline:c.deadline,status:c.status,parts:c.solutionParts,attachments:added});save();$('#solutionDialog').close('saved');openCase(c.id);});
-$('#btnData').onclick=()=>$('#dataDialog').showModal();
-$('#btnExportJson').onclick=()=>{
-  const blob=new Blob([JSON.stringify({version:3,exportedAt:new Date().toISOString(),cases,scoring,meetings},null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`Failure_Analysis_backup_${new Date().toISOString().slice(0,10)}.json`; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-};
-$('#jsonImport').addEventListener('change',async e=>{
-  const file=e.target.files?.[0]; if(!file)return;
-  try{const data=JSON.parse(await file.text()); if(!Array.isArray(data.cases)) throw new Error('Formato non valido'); cases=data.cases; scoring=data.scoring||scoring; meetings=data.meetings||[]; save(); render(); alert(`Importati ${cases.length} casi.`);}catch(err){alert('Importazione non riuscita: '+err.message)} finally{e.target.value='';}
-});
-$('#backToAgenda').onclick=showAgenda;
-document.addEventListener('change',e=>{if(e.target.matches('#modelsOptions input'))updateModelsSummary();});
-$('#newAnomalyFiles')?.addEventListener('change',e=>renderPendingFiles(e.target,'newAnomalyFileList'));
-$('#updateFiles')?.addEventListener('change',e=>renderPendingFiles(e.target,'updateFileList'));
-$('#solutionFiles')?.addEventListener('change',e=>renderPendingFiles(e.target,'solutionFileList'));
-document.addEventListener('click',e=>{const btn=e.target.closest('[data-add-part]');if(!btn)return;const id=btn.dataset.addPart;addPartRow(id,id!=='anomalyParts');});
-document.querySelectorAll('[data-close-dialog]').forEach(btn=>btn.addEventListener('click',()=>{const d=document.getElementById(btn.dataset.closeDialog); if(d?.open)d.close('cancel');}));
-['caseDialog','updateDialog','solutionDialog','scoringDialog','meetingsDialog','dataDialog'].forEach(id=>{const d=document.getElementById(id);if(!d)return;d.addEventListener('click',e=>{if(e.target===d){const r=d.getBoundingClientRect();const inside=e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;if(!inside)d.close('cancel');}});});
-populateCatalogs(); render();
-
+document.querySelectorAll('.nav-item').forEach(n=>n.onclick=()=>setView(n.dataset.view));document.getElementById('newCaseTop').onclick=openNewCase;refreshCounts();render();
+})();
 </script>
 </body>
 </html>
