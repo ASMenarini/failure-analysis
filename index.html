@@ -20,6 +20,10 @@
 .field-help{font-size:11px;color:var(--muted);font-weight:500;line-height:1.3}.score-preview strong:before{content:'TOTALONE  ';font-size:10px;letter-spacing:.08em;color:var(--muted);vertical-align:middle}.priority.high{font-size:18px}.case-section .muted b{color:var(--ink)}
 .drawer-actions{margin-top:14px;display:flex;justify-content:flex-end}.image-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.image-card{margin:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#f8fafb}.image-card img{display:block;width:100%;height:210px;object-fit:contain;background:#eef3f6}.image-card figcaption{padding:8px 10px;font-size:12px;color:var(--muted)}.image-empty{display:flex;align-items:center;gap:14px;border:1px dashed #c6d5df;border-radius:10px;padding:18px;background:#f8fbfd}.image-empty-icon{font-size:32px;color:#7b94a6}.data-panel{padding:6px 22px 22px}.data-panel p{line-height:1.5}.import-label{display:inline-flex;align-items:center;gap:10px;margin-left:8px;border:1px solid #c8d5de;border-radius:8px;padding:9px 13px;font-weight:700;cursor:pointer}.import-label input{display:none}@media(max-width:700px){.image-gallery{grid-template-columns:1fr}}
 
+
+.case-page{min-height:calc(100vh - 140px)}.case-page-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.case-page-head{background:#fff;border:1px solid var(--line);border-radius:12px 12px 0 0;padding:26px 28px;border-bottom:0}.case-page-head h1{font-size:32px;margin:4px 0 0}.case-page-body{background:#fff;border:1px solid var(--line);border-radius:0 0 12px 12px;box-shadow:var(--shadow);padding-bottom:10px}.case-page-body .case-summary{padding:24px 28px}.case-page-body .case-section{padding:0 28px 26px}.case-page-body .image-gallery{grid-template-columns:repeat(3,minmax(0,1fr))}
+.multi-select{position:relative}.multi-select summary{list-style:none;border:1px solid #cfd9e1;border-radius:8px;background:#fff;padding:10px 12px;cursor:pointer;font-weight:500;color:var(--ink)}.multi-select summary::-webkit-details-marker{display:none}.multi-select summary:after{content:'▾';float:right;color:var(--muted)}.multi-options{position:absolute;z-index:30;left:0;right:0;top:calc(100% + 5px);max-height:260px;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:9px;box-shadow:0 12px 30px rgba(0,0,0,.15);padding:7px}.multi-option{display:flex!important;flex-direction:row!important;align-items:center;gap:9px;padding:8px 9px;border-radius:6px;font-size:13px!important;color:var(--ink)!important;cursor:pointer}.multi-option:hover{background:#f1f6f9}.multi-option input{width:auto;margin:0}.selected-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}.selected-chip{font-size:11px;background:#eaf2f7;color:var(--blue);padding:4px 7px;border-radius:999px;font-weight:700}
+@media(max-width:900px){.case-page-body .image-gallery{grid-template-columns:1fr}.case-page-top{align-items:stretch;gap:10px;flex-direction:column}.case-page-top .btn{width:100%}}
 </style>
   <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 </head>
@@ -30,6 +34,7 @@
   </header>
 
   <main class="shell">
+    <div id="dashboardView">
     <section class="hero-row">
       <div><div class="eyebrow">AGENDA RIUNIONE</div><h1>Failure Analysis</h1><div class="muted" id="meetingDate"></div></div>
       <div class="hero-actions"><button class="btn soft" id="btnMeetingSnapshot">Salva snapshot riunione</button><button class="btn soft" id="btnExportAll">Esporta agenda PPTX</button></div>
@@ -51,36 +56,48 @@
         <table><thead><tr><th></th><th>Priorità</th><th>Scheda</th><th>Problema</th><th>Modelli</th><th>Azione aperta</th><th>Responsabile</th><th>Scadenza</th><th>Stato</th></tr></thead><tbody id="caseRows"></tbody></table>
       </div>
     </section>
-  </main>
+    </div>
 
-  <div class="drawer-backdrop hidden" id="backdrop"></div>
-  <aside class="drawer hidden" id="caseDrawer">
-    <div class="drawer-head"><div><div class="eyebrow">SCHEDA CASO</div><h2 id="drawerTitle"></h2></div><button class="icon-btn" id="closeDrawer">×</button></div>
-    <div id="drawerBody"></div>
-  </aside>
+    <section id="casePage" class="case-page hidden">
+      <div class="case-page-top">
+        <button class="btn ghost" type="button" id="backToAgenda">← Torna all'agenda</button>
+        <button class="btn primary" type="button" id="pageUpdateCase">+ Aggiorna riunione</button>
+      </div>
+      <div class="case-page-head">
+        <div><div class="eyebrow">SCHEDA CASO</div><h1 id="casePageTitle"></h1></div>
+      </div>
+      <div id="casePageBody" class="case-page-body"></div>
+    </section>
+  </main>
 
   <dialog id="caseDialog" class="modal">
     <form id="caseForm" method="dialog">
-      <div class="modal-head"><div><div class="eyebrow">NUOVO CASO</div><h2>Inserisci Failure Analysis</h2></div><button class="icon-btn" value="cancel">×</button></div>
+      <div class="modal-head"><div><div class="eyebrow">NUOVO CASO</div><h2>Inserisci Failure Analysis</h2></div><button class="icon-btn" type="button" data-close-dialog="caseDialog">×</button></div>
       <div class="form-grid">
         <label>Scheda<input required name="ticket" placeholder="es. 306"></label>
         <label>Titolo<input required name="title" placeholder="Descrizione sintetica"></label>
         <label class="span2">Descrizione<textarea name="description" rows="3"></textarea></label>
-        <label>Modelli<input name="models" placeholder="Citymood 12, BEV..."></label>
-        <label>Ente / responsabile<input name="owner" placeholder="Engineering, Quality..."></label>
+        <label>Modelli coinvolti
+          <details class="multi-select" id="modelsDropdown">
+            <summary id="modelsSummary">Seleziona uno o più modelli</summary>
+            <div class="multi-options" id="modelsOptions"></div>
+          </details>
+          <small class="field-help">Multiselezione dall'anagrafica MODELLI; sarà popolata integralmente con l'import Access.</small>
+        </label>
+        <label>Ente / responsabile<select name="owner" id="ownerSelect"><option value="">Seleziona ente</option></select></label>
         <label>Numero casi (Frequenza)<input name="frequencyCases" type="number" value="0" min="0" step="1"><small class="field-help" id="frequencyHelp">Coefficiente frequenza: 1</small></label>
         <label>Sicurezza<select name="safety" class="score-select"></select></label>
         <label>Sales deterrent<select name="sales" class="score-select"></select></label>
-        <label>Costi garanzia<select name="warranty" class="score-select"></select></label>
+        <label>Costi garanzia (€)<input name="warrantyCost" type="number" min="0" step="0.01" value="0" placeholder="es. 12500"><small class="field-help" id="warrantyHelp">Inserisci il costo reale; il coefficiente verrà associato alla fascia configurata.</small></label>
         <label>Urgenza<select name="urgency" class="score-select"></select></label>
         <label>Bonus manuale<input name="bonus" type="number" value="0" min="0" step="1"><small class="field-help">Correttivo discrezionale per aumentare la priorità.</small></label>
         <label class="span2">Motivazione bonus<input name="bonusReason" placeholder="Perché il caso deve salire di priorità?"></label>
         <div class="score-preview span2"><span>Punteggio iniziale</span><strong id="scorePreview">0</strong><small id="scoreWarning">Frequenza calcolata automaticamente; altri coefficienti configurabili finché non vengono validati con l’Access.</small></div>
         <label class="span2">Prima azione<textarea name="action" rows="2" placeholder="Azione concordata / da eseguire"></textarea></label>
         <label>Scadenza<input name="deadline" type="date"></label>
-        <label>Stato<select name="status"><option>Aperto</option><option>Sospeso</option></select></label>
+        <label>Stato<select name="status"><option>Aperto</option><option>Sospeso</option><option>Risolto</option></select></label>
       </div>
-      <div class="modal-actions"><button class="btn ghost" value="cancel">Annulla</button><button class="btn primary" id="saveCase" value="default">Salva caso</button></div>
+      <div class="modal-actions"><button class="btn ghost" type="button" data-close-dialog="caseDialog">Annulla</button><button class="btn primary" id="saveCase" value="default">Salva caso</button></div>
     </form>
   </dialog>
 
@@ -101,15 +118,15 @@
   <dialog id="updateDialog" class="modal narrow">
     <form id="updateForm" method="dialog">
       <input type="hidden" name="caseId">
-      <div class="modal-head"><div><div class="eyebrow">AGGIORNA CASO</div><h2>Nuovo aggiornamento riunione</h2></div><button class="icon-btn" value="cancel" formnovalidate>×</button></div>
+      <div class="modal-head"><div><div class="eyebrow">AGGIORNA CASO</div><h2>Nuovo aggiornamento riunione</h2></div><button class="icon-btn" type="button" data-close-dialog="updateDialog">×</button></div>
       <div class="form-grid">
         <label class="span2">Aggiornamento / decisione<textarea name="note" rows="4" placeholder="Cosa è emerso durante la riunione?"></textarea></label>
         <label class="span2">Nuova azione<textarea name="action" rows="2" placeholder="Nuova azione concordata"></textarea></label>
-        <label>Responsabile<input name="owner" placeholder="Responsabile azione"></label>
+        <label>Responsabile<select name="owner" id="updateOwnerSelect"><option value="">Seleziona ente</option></select></label>
         <label>Scadenza<input name="deadline" type="date"></label>
         <label>Stato<select name="status"><option>Aperto</option><option>Sospeso</option><option>Risolto</option></select></label>
       </div>
-      <div class="modal-actions"><button class="btn ghost" value="cancel" formnovalidate>Annulla</button><button class="btn primary" value="default">Salva aggiornamento</button></div>
+      <div class="modal-actions"><button class="btn ghost" type="button" data-close-dialog="updateDialog">Annulla</button><button class="btn primary" value="default">Salva aggiornamento</button></div>
     </form>
   </dialog>
 
@@ -131,8 +148,8 @@ const LS_CASES='fa_cases_v2', LS_SCORE='fa_scoring_v2', LS_MEET='fa_meetings_v2'
 const defaultScoring={
   safety:[['Nessun impatto',1],['Basso',2],['Medio',5],['Alto',8],['Critico',10]],
   sales:[['Nullo',1],['Basso',2],['Medio',5],['Alto',8],['Critico',10]],
-  warranty:[['Trascurabile',1],['Basso',2],['Medio',5],['Alto',8],['Critico',10]],
-  urgency:[['Bassa',1],['Moderata',3],['Media',5],['Alta',8],['Immediata',10]]
+  urgency:[['Bassa',1],['Moderata',3],['Media',5],['Alta',8],['Immediata',10]],
+  warrantyBands:[[0,1],[1000,2],[5000,3],[10000,4],[20000,5],[30000,6],[50000,7],[75000,8],[100000,9],[150000,10]]
 };
 const frequencyCoefficient=n=>{
   n=Math.max(0,Number(n)||0);
@@ -155,10 +172,17 @@ const seedCases=[
 let cases=JSON.parse(localStorage.getItem(LS_CASES)||'null')||seedCases;
 let scoring=JSON.parse(localStorage.getItem(LS_SCORE)||'null')||defaultScoring;
 let meetings=JSON.parse(localStorage.getItem(LS_MEET)||'[]');
+let modelCatalog=[...new Set(cases.flatMap(c=>c.models||[]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it'));
+let ownerCatalog=[...new Set(cases.map(c=>c.owner).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it'));
+function warrantyCoefficient(cost){
+  const bands=(scoring.warrantyBands||defaultScoring.warrantyBands).slice().sort((a,b)=>a[0]-b[0]);
+  let coeff=1; for(const [min,val] of bands){if(Number(cost)>=Number(min)) coeff=Number(val)||coeff; else break;} return coeff;
+}
 
 // Compatibilità con dati salvati da versioni precedenti del prototipo.
 cases=cases.map(c=>{
   if(!c.images) c.images={problem:[],solution:[]};
+  if(c.warrantyCost==null) c.warrantyCost=0;
   if(c.frequencyCases==null){
     c.frequencyCases=0;
     if(c.scores) c.scores.frequency=frequencyCoefficient(0);
@@ -208,26 +232,42 @@ function renderHistory(history){
  }).join('');
 }
 
-function openCase(id){const c=cases.find(x=>x.id===id); if(!c)return; $('#drawerTitle').textContent=`${c.ticket} — ${c.title}`;
+function openCase(id){
+ const c=cases.find(x=>x.id===id); if(!c)return;
+ window.currentCaseId=id;
+ $('#casePageTitle').textContent=`${c.ticket} — ${c.title}`;
  const breakdown=Object.entries(c.scores||{}).map(([k,v])=>`<tr><td>${({frequency:'Frequenza',safety:'Sicurezza',sales:'Sales deterrent',warranty:'Costi garanzia',urgency:'Urgenza',bonus:'Bonus manuale'})[k]||k}</td><td>${v}</td></tr>`).join('');
- $('#drawerBody').innerHTML=`<div class="case-summary"><div class="summary-grid"><div class="summary-box"><span>STATO</span><strong>${c.status}</strong></div><div class="summary-box"><span>TOTALONE</span><strong class="priority ${priorityClass(c.score)}">${c.score} — ${priorityLabel(c.score)}</strong></div><div class="summary-box"><span>APERTURA</span><strong>${dateIT(c.created)}</strong></div></div><div class="drawer-actions"><button class="btn primary" data-update-case="${c.id}">+ Aggiorna riunione</button></div></div>
- <div class="case-section"><h3>Problema</h3><p>${c.description||'—'}</p><p><b>Modelli:</b> ${c.models.join(', ')||'—'} &nbsp; · &nbsp; <b>Responsabile:</b> ${c.owner||'—'}</p></div>
+ $('#casePageBody').innerHTML=`<div class="case-summary"><div class="summary-grid"><div class="summary-box"><span>STATO</span><strong>${c.status}</strong></div><div class="summary-box"><span>TOTALONE</span><strong class="priority ${priorityClass(c.score)}">${c.score} — ${priorityLabel(c.score)}</strong></div><div class="summary-box"><span>APERTURA</span><strong>${dateIT(c.created)}</strong></div></div></div>
+ <div class="case-section"><h3>Problema</h3><p>${esc(c.description||'—')}</p><p><b>Modelli:</b> ${esc(c.models.join(', ')||'—')} &nbsp; · &nbsp; <b>Responsabile:</b> ${esc(c.owner||'—')}</p></div>
  ${imageSection(c,'problem','Immagini problema')}
- <div class="case-section"><h3>Scoring</h3><p class="muted">Frequenza rilevata: <b>${c.frequencyCases ?? '—'} casi</b>${c.bonusReason ? ` · <b>Bonus:</b> ${c.bonusReason}` : ''}</p><table class="score-table"><thead><tr><th>Criterio</th><th>Coefficiente</th></tr></thead><tbody>${breakdown}<tr><td><b>TOTALONE</b></td><td><b>${c.score}</b></td></tr></tbody></table></div>
- <div class="case-section"><h3>Azione corrente</h3><div class="action-card"><b>${c.action||'Nessuna azione'}</b><div class="muted">${c.owner||'—'} · scadenza ${dateIT(c.deadline)}</div></div></div>
+ <div class="case-section"><h3>Scoring</h3><p class="muted">Frequenza rilevata: <b>${c.frequencyCases ?? '—'} casi</b>${c.warrantyCost!=null ? ` · <b>Costi garanzia:</b> € ${Number(c.warrantyCost).toLocaleString('it-IT')}`:''}${c.bonusReason ? ` · <b>Bonus:</b> ${esc(c.bonusReason)}` : ''}</p><table class="score-table"><thead><tr><th>Criterio</th><th>Coefficiente</th></tr></thead><tbody>${breakdown}<tr><td><b>TOTALONE</b></td><td><b>${c.score}</b></td></tr></tbody></table></div>
+ <div class="case-section"><h3>Azione corrente</h3><div class="action-card"><b>${esc(c.action||'Nessuna azione')}</b><div class="muted">${esc(c.owner||'—')} · scadenza ${dateIT(c.deadline)}</div></div></div>
  ${imageSection(c,'solution','Immagini soluzione')}
- <div class="case-section"><h3>Storico riunioni</h3><p class="muted">Per ogni riunione sono riportati decisioni e cambiamenti operativi del caso.</p>${renderHistory(c.history||[])}</div>`;
- const u=$('[data-update-case]'); if(u) u.onclick=()=>openUpdate(c.id);
- $('#backdrop').classList.remove('hidden');$('#caseDrawer').classList.remove('hidden');}
+ <div class="case-section"><h3>Storico riunioni</h3><p class="muted">Verbale operativo del caso: decisioni, azioni, responsabili, scadenze e stato.</p>${renderHistory(c.history||[])}</div>`;
+ $('#dashboardView').classList.add('hidden'); $('#casePage').classList.remove('hidden');
+ $('#pageUpdateCase').onclick=()=>openUpdate(c.id);
+ window.scrollTo({top:0,behavior:'instant'});
+}
+function showAgenda(){window.currentCaseId=null;$('#casePage').classList.add('hidden');$('#dashboardView').classList.remove('hidden');window.scrollTo({top:0,behavior:'instant'});}
 function openUpdate(id){
   const c=cases.find(x=>x.id===id); if(!c)return;
+  populateOwnerSelects();
   const f=$('#updateForm'); f.elements.caseId.value=id; f.elements.note.value=''; f.elements.action.value=c.action||''; f.elements.owner.value=c.owner||''; f.elements.deadline.value=c.deadline||''; f.elements.status.value=c.status||'Aperto';
   $('#updateDialog').showModal();
 }
-function closeDrawer(){ $('#backdrop').classList.add('hidden');$('#caseDrawer').classList.add('hidden'); }
-function populateScoreSelects(){document.querySelectorAll('.score-select').forEach(sel=>{let key=sel.name; sel.innerHTML=(scoring[key]||[]).map(([label,val])=>`<option value="${val}">${label} — coeff. ${val}</option>`).join('')}); updateScorePreview();}
-function updateScorePreview(){let f=new FormData($('#caseForm')); const freqCases=Number(f.get('frequencyCases'))||0; const freq=frequencyCoefficient(freqCases); let sum=freq+['safety','sales','warranty','urgency','bonus'].reduce((a,k)=>a+(Number(f.get(k))||0),0);$('#scorePreview').textContent=sum; const h=$('#frequencyHelp'); if(h) h.textContent=`Coefficiente frequenza: ${freq}`;}
-function scoringEditor(){const labels={safety:'Sicurezza',sales:'Sales deterrent',warranty:'Costi garanzia',urgency:'Urgenza'}; $('#scoringEditor').innerHTML=Object.keys(scoring).map(k=>`<div class="score-group" data-key="${k}"><h3>${labels[k]}</h3>${scoring[k].map((r,i)=>`<div class="score-line"><input data-i="${i}" data-t="label" value="${r[0]}"><input type="number" data-i="${i}" data-t="value" value="${r[1]}"></div>`).join('')}</div>`).join('');}
+function populateCatalogs(){
+  modelCatalog=[...new Set([...modelCatalog,...cases.flatMap(c=>c.models||[]).filter(Boolean)])].sort((a,b)=>a.localeCompare(b,'it'));
+  ownerCatalog=[...new Set([...ownerCatalog,...cases.map(c=>c.owner).filter(Boolean)])].sort((a,b)=>a.localeCompare(b,'it'));
+  const box=$('#modelsOptions'); if(box) box.innerHTML=modelCatalog.map(m=>`<label class="multi-option"><input type="checkbox" name="models" value="${esc(m)}"><span>${esc(m)}</span></label>`).join('') || '<div class="muted" style="padding:8px">Anagrafica MODELLI in attesa di importazione.</div>';
+  populateOwnerSelects(); updateModelsSummary();
+}
+function populateOwnerSelects(){
+  ['#ownerSelect','#updateOwnerSelect'].forEach(id=>{const sel=$(id); if(!sel)return; const current=sel.value; sel.innerHTML='<option value="">Seleziona ente</option>'+ownerCatalog.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join(''); if(ownerCatalog.includes(current))sel.value=current;});
+}
+function updateModelsSummary(){const checked=[...document.querySelectorAll('#modelsOptions input:checked')].map(x=>x.value);const sum=$('#modelsSummary'); if(sum) sum.textContent=checked.length?checked.join(', '):'Seleziona uno o più modelli';}
+function populateScoreSelects(){document.querySelectorAll('.score-select').forEach(sel=>{let key=sel.name; sel.innerHTML=(scoring[key]||[]).map(([label,val])=>`<option value="${val}">${label} — coeff. ${val}</option>`).join('')}); populateCatalogs(); updateScorePreview();}
+function updateScorePreview(){let f=new FormData($('#caseForm')); const freqCases=Number(f.get('frequencyCases'))||0; const freq=frequencyCoefficient(freqCases); const warrantyCost=Number(f.get('warrantyCost'))||0; const warranty=warrantyCoefficient(warrantyCost); let sum=freq+warranty+['safety','sales','urgency','bonus'].reduce((a,k)=>a+(Number(f.get(k))||0),0);$('#scorePreview').textContent=sum; const h=$('#frequencyHelp'); if(h) h.textContent=`Coefficiente frequenza: ${freq}`; const wh=$('#warrantyHelp'); if(wh) wh.textContent=`Costo reale € ${warrantyCost.toLocaleString('it-IT')} · coefficiente provvisorio ${warranty} (fasce da validare/importare dall’Access)`;}
+function scoringEditor(){const labels={safety:'Sicurezza',sales:'Sales deterrent',urgency:'Urgenza'}; $('#scoringEditor').innerHTML=['safety','sales','urgency'].map(k=>`<div class="score-group" data-key="${k}"><h3>${labels[k]}</h3>${scoring[k].map((r,i)=>`<div class="score-line"><input data-i="${i}" data-t="label" value="${r[0]}"><input type="number" data-i="${i}" data-t="value" value="${r[1]}"></div>`).join('')}</div>`).join('')+`<div class="score-group"><h3>Costi garanzia (€)</h3><p class="muted">Nel nuovo caso si inserisce il costo numerico reale. Le fasce coefficiente saranno sostituite con quelle esatte dell'Access.</p></div>`;}
 function exportPPT(list){
  if(typeof PptxGenJS==='undefined'){alert('Libreria PowerPoint non disponibile: serve connessione internet per caricare PptxGenJS.');return}
  const pptx=new PptxGenJS();pptx.layout='LAYOUT_WIDE';pptx.author='MENARINI Failure Analysis';pptx.subject='Failure Analysis';pptx.title='Failure Analysis';pptx.company='MENARINI';
@@ -240,9 +280,9 @@ $('#meetingDate').textContent=`Riunione del ${new Date().toLocaleDateString('it-
 ['#search','#filterStatus','#filterPriority'].forEach(x=>$(x).addEventListener('input',render));
 $('#btnNewCase').onclick=()=>{populateScoreSelects();$('#caseDialog').showModal()};
 $('#caseForm').addEventListener('input',updateScorePreview);
-$('#caseForm').addEventListener('submit',e=>{if(e.submitter?.value==='cancel')return; let f=new FormData(e.target);const frequencyCases=+f.get('frequencyCases')||0;let scores={frequency:frequencyCoefficient(frequencyCases),safety:+f.get('safety'),sales:+f.get('sales'),warranty:+f.get('warranty'),urgency:+f.get('urgency'),bonus:+f.get('bonus')||0};let score=Object.values(scores).reduce((a,b)=>a+b,0);cases.push({id:crypto.randomUUID(),ticket:f.get('ticket'),title:f.get('title'),description:f.get('description'),models:String(f.get('models')||'').split(',').map(x=>x.trim()).filter(Boolean),owner:f.get('owner'),status:f.get('status'),score,frequencyCases,bonusReason:f.get('bonusReason')||'',action:f.get('action'),deadline:f.get('deadline'),created:new Date().toISOString().slice(0,10),scores,history:[[new Date().toLocaleDateString('it-IT'),'Caso creato']],images:{problem:[],solution:[]},selected:true});save();render();e.target.reset();});
+$('#caseForm').addEventListener('submit',e=>{let f=new FormData(e.target);const frequencyCases=+f.get('frequencyCases')||0;const warrantyCost=+f.get('warrantyCost')||0;let scores={frequency:frequencyCoefficient(frequencyCases),safety:+f.get('safety'),sales:+f.get('sales'),warranty:warrantyCoefficient(warrantyCost),urgency:+f.get('urgency'),bonus:+f.get('bonus')||0};let score=Object.values(scores).reduce((a,b)=>a+b,0);const models=f.getAll('models').map(x=>String(x).trim()).filter(Boolean);cases.push({id:crypto.randomUUID(),ticket:f.get('ticket'),title:f.get('title'),description:f.get('description'),models,owner:f.get('owner'),status:f.get('status'),score,frequencyCases,warrantyCost,bonusReason:f.get('bonusReason')||'',action:f.get('action'),deadline:f.get('deadline'),created:new Date().toISOString().slice(0,10),scores,history:[[new Date().toLocaleDateString('it-IT'),'Caso creato']],images:{problem:[],solution:[]},selected:true});save();render();e.target.reset();$('#modelsDropdown').removeAttribute('open');populateCatalogs();});
 $('#btnScoring').onclick=()=>{scoringEditor();$('#scoringDialog').showModal()};
-$('#scoringForm').addEventListener('submit',e=>{if(e.submitter?.value==='cancel')return;document.querySelectorAll('.score-group').forEach(g=>{let k=g.dataset.key;let rows=[...g.querySelectorAll('.score-line')].map(line=>[line.querySelector('[data-t=label]').value,+line.querySelector('[data-t=value]').value]);scoring[k]=rows});save();});
+$('#scoringForm').addEventListener('submit',e=>{if(e.submitter?.value==='cancel')return;document.querySelectorAll('.score-group[data-key]').forEach(g=>{let k=g.dataset.key;let rows=[...g.querySelectorAll('.score-line')].map(line=>[line.querySelector('[data-t=label]').value,+line.querySelector('[data-t=value]').value]);scoring[k]=rows});save();});
 $('#btnMeetingSnapshot').onclick=()=>{meetings.unshift({date:new Date().toISOString(),cases:JSON.parse(JSON.stringify(cases))});save();alert('Snapshot riunione salvato.')};
 $('#btnMeetings').onclick=()=>{$('#meetingsList').innerHTML=meetings.length?meetings.map((m,i)=>`<div class="meeting-item"><div><b>${new Date(m.date).toLocaleString('it-IT')}</b><div class="muted">${m.cases.length} casi</div></div><span class="pill">Snapshot ${meetings.length-i}</span></div>`).join(''):'<div class="notice">Nessuna riunione salvata.</div>';$('#meetingsDialog').showModal()};
 $('#btnExportSelected').onclick=()=>exportPPT(cases.filter(c=>c.selected));$('#btnExportAll').onclick=()=>exportPPT(cases.filter(c=>c.status!=='Risolto'));
@@ -266,8 +306,11 @@ $('#jsonImport').addEventListener('change',async e=>{
   const file=e.target.files?.[0]; if(!file)return;
   try{const data=JSON.parse(await file.text()); if(!Array.isArray(data.cases)) throw new Error('Formato non valido'); cases=data.cases; scoring=data.scoring||scoring; meetings=data.meetings||[]; save(); render(); alert(`Importati ${cases.length} casi.`);}catch(err){alert('Importazione non riuscita: '+err.message)} finally{e.target.value='';}
 });
-$('#closeDrawer').onclick=closeDrawer;$('#backdrop').onclick=closeDrawer;
-render();
+$('#backToAgenda').onclick=showAgenda;
+document.addEventListener('change',e=>{if(e.target.matches('#modelsOptions input'))updateModelsSummary();});
+document.querySelectorAll('[data-close-dialog]').forEach(btn=>btn.addEventListener('click',()=>{const d=document.getElementById(btn.dataset.closeDialog); if(d?.open)d.close('cancel');}));
+['caseDialog','updateDialog','scoringDialog','meetingsDialog','dataDialog'].forEach(id=>{const d=document.getElementById(id);if(!d)return;d.addEventListener('click',e=>{if(e.target===d){const r=d.getBoundingClientRect();const inside=e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;if(!inside)d.close('cancel');}});});
+populateCatalogs(); render();
 
 </script>
 </body>
