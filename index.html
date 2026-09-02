@@ -31,6 +31,10 @@
 .parts-block{grid-column:1/-1;border:1px solid var(--line);border-radius:10px;background:#fafcfd;padding:12px}.parts-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}.parts-head h4{margin:0;color:var(--blue);font-size:13px;text-transform:uppercase;letter-spacing:.04em}.parts-list{display:grid;gap:8px}.part-row{display:grid;grid-template-columns:minmax(140px,.8fr) minmax(220px,1.6fr) auto;gap:8px;align-items:center}.part-row.with-qty{grid-template-columns:minmax(130px,.75fr) minmax(200px,1.5fr) 90px auto}.part-row input{width:100%}.part-remove{border:1px solid #d5dee5;background:#fff;border-radius:7px;width:34px;height:34px;cursor:pointer;font-size:18px;color:#657985}.parts-table{width:100%;min-width:0;margin-top:8px;border:1px solid var(--line);border-radius:8px;overflow:hidden}.parts-table th{font-size:10px}.parts-table td,.parts-table th{padding:8px 9px}.parts-empty{font-size:12px;color:var(--muted);padding:10px 0}.timeline-parts{margin-top:10px;padding:9px 10px;border-radius:8px;background:#eef4f8}.timeline-parts-title{font-size:10px;font-weight:800;color:var(--blue);text-transform:uppercase;margin-bottom:6px}.solution-text{white-space:pre-wrap;line-height:1.5}
 @media(max-width:700px){.part-row,.part-row.with-qty{grid-template-columns:1fr}.part-remove{width:100%}}
 
+
+.attachment-picker{grid-column:1/-1;border:1px solid var(--line);border-radius:10px;background:#fafcfd;padding:14px}.attachment-picker-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}.attachment-picker-head h4{margin:0;color:var(--blue);font-size:13px;text-transform:uppercase;letter-spacing:.04em}.file-pick-btn{display:inline-flex;align-items:center;gap:8px;background:#eaf2f7;color:var(--blue);border:1px solid #d2e1eb;border-radius:8px;padding:9px 12px;font-weight:700;cursor:pointer}.file-pick-btn input{display:none}.pending-files,.attachment-files{display:grid;gap:8px;margin-top:10px}.pending-file,.attachment-file{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:9px;background:#fff;padding:9px 10px}.pending-file-thumb{width:54px;height:42px;object-fit:cover;border-radius:6px;background:#eef3f6}.file-icon{width:42px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:7px;background:#eef3f6;color:var(--blue);font-weight:900;font-size:11px}.file-meta{min-width:0;flex:1}.file-name{font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.file-sub{font-size:11px;color:var(--muted);margin-top:2px}.file-actions{display:flex;gap:6px}.file-action{border:1px solid #d5dee5;background:#fff;border-radius:7px;padding:6px 9px;cursor:pointer;font-size:12px;font-weight:700}.attachment-images{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:10px}.attachment-image{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#f8fafb}.attachment-image img{display:block;width:100%;height:220px;object-fit:contain;background:#eef3f6;cursor:zoom-in}.attachment-image .cap{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;font-size:12px}.section-title-actions{display:flex;justify-content:space-between;align-items:center;gap:12px}.section-title-actions h3{flex:1}.attachment-empty{border:1px dashed #c6d5df;border-radius:10px;padding:14px;color:var(--muted);background:#f8fbfd;font-size:13px}.modal.wide{width:min(920px,94vw)}
+@media(max-width:800px){.attachment-images{grid-template-columns:1fr}.attachment-picker-head,.section-title-actions{align-items:flex-start;flex-direction:column}}
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 </head>
@@ -85,6 +89,7 @@
         <label>Titolo<input required name="title" placeholder="Descrizione sintetica"></label>
         <label class="span2">Descrizione<textarea name="description" rows="3"></textarea></label>
         <div class="parts-block"><div class="parts-head"><h4>Ricambi ANOMALIA</h4><button type="button" class="btn soft" data-add-part="anomalyParts">+ Aggiungi ricambio</button></div><div class="parts-list" id="anomalyParts"></div><small class="field-help">Facoltativo · Part Number + Descrizione · più righe consentite.</small></div>
+        <div class="attachment-picker"><div class="attachment-picker-head"><h4>Allegati ANOMALIA</h4><label class="file-pick-btn">+ Aggiungi file<input id="newAnomalyFiles" type="file" multiple></label></div><small class="field-help">Puoi allegare immagini, PDF, Excel, Word, PowerPoint e altri documenti tecnici. Le immagini saranno mostrate direttamente nella scheda.</small><div class="pending-files" id="newAnomalyFileList"></div></div>
         <label>Modelli coinvolti
           <details class="multi-select" id="modelsDropdown">
             <summary id="modelsSummary">Seleziona uno o più modelli</summary>
@@ -101,8 +106,6 @@
         <label>Bonus manuale<input name="bonus" type="number" value="0" min="0" step="1"><small class="field-help">Correttivo discrezionale per aumentare la priorità.</small></label>
         <label class="span2">Motivazione bonus<input name="bonusReason" placeholder="Perché il caso deve salire di priorità?"></label>
         <div class="score-preview span2"><span>Punteggio iniziale</span><strong id="scorePreview">0</strong><small id="scoreWarning">Frequenza calcolata automaticamente; altri coefficienti configurabili finché non vengono validati con l’Access.</small></div>
-        <label class="span2">Soluzione<textarea name="solution" rows="3" placeholder="Soluzione definitiva / proposta (facoltativa)"></textarea></label>
-        <div class="parts-block"><div class="parts-head"><h4>Ricambi SOLUZIONE</h4><button type="button" class="btn soft" data-add-part="solutionParts">+ Aggiungi ricambio</button></div><div class="parts-list" id="solutionParts"></div><small class="field-help">Facoltativo · Part Number + Descrizione + Quantità · più righe consentite.</small></div>
         <label class="span2">Prima azione<textarea name="action" rows="2" placeholder="Azione concordata / da eseguire"></textarea></label>
         <label>Scadenza<input name="deadline" type="date"></label>
         <label>Stato<select name="status"><option>Aperto</option><option>Sospeso</option><option>Risolto</option></select></label>
@@ -132,6 +135,7 @@
       <div class="form-grid">
         <label class="span2">Aggiornamento / decisione<textarea name="note" rows="4" placeholder="Cosa è emerso durante la riunione?"></textarea></label>
         <div class="parts-block"><div class="parts-head"><h4>Ricambi aggiornamento</h4><button type="button" class="btn soft" data-add-part="updateParts">+ Aggiungi ricambio</button></div><div class="parts-list" id="updateParts"></div><small class="field-help">Facoltativo · Part Number + Descrizione + Quantità · più righe consentite.</small></div>
+        <div class="attachment-picker"><div class="attachment-picker-head"><h4>Allegati aggiornamento</h4><label class="file-pick-btn">+ Aggiungi file<input id="updateFiles" type="file" multiple></label></div><small class="field-help">Immagini e documenti di qualsiasi natura utili alla riunione.</small><div class="pending-files" id="updateFileList"></div></div>
         <label class="span2">Nuova azione<textarea name="action" rows="2" placeholder="Nuova azione concordata"></textarea></label>
         <label>Responsabile<select name="owner" id="updateOwnerSelect"><option value="">Seleziona ente</option></select></label>
         <label>Scadenza<input name="deadline" type="date"></label>
@@ -141,12 +145,25 @@
     </form>
   </dialog>
 
+  <dialog id="solutionDialog" class="modal wide">
+    <form id="solutionForm" method="dialog">
+      <input type="hidden" name="caseId">
+      <div class="modal-head"><div><div class="eyebrow">SOLUZIONE</div><h2>Aggiorna soluzione</h2></div><button class="icon-btn" type="button" data-close-dialog="solutionDialog">×</button></div>
+      <div class="form-grid">
+        <label class="span2">Soluzione<textarea name="solution" rows="5" placeholder="Descrivi la soluzione definitiva o proposta"></textarea></label>
+        <div class="parts-block"><div class="parts-head"><h4>Ricambi SOLUZIONE</h4><button type="button" class="btn soft" data-add-part="solutionParts">+ Aggiungi ricambio</button></div><div class="parts-list" id="solutionParts"></div><small class="field-help">Part Number + Descrizione + Quantità · più righe consentite.</small></div>
+        <div class="attachment-picker"><div class="attachment-picker-head"><h4>Allegati SOLUZIONE</h4><label class="file-pick-btn">+ Aggiungi file<input id="solutionFiles" type="file" multiple></label></div><small class="field-help">Immagini, PDF, Excel, Word, PowerPoint e altri documenti. I file già presenti restano collegati.</small><div class="pending-files" id="solutionFileList"></div></div>
+      </div>
+      <div class="modal-actions"><button class="btn ghost" type="button" data-close-dialog="solutionDialog">Annulla</button><button class="btn primary" value="default">Salva soluzione</button></div>
+    </form>
+  </dialog>
+
   <dialog id="dataDialog" class="modal narrow">
     <form method="dialog">
       <div class="modal-head"><div><div class="eyebrow">MIGRAZIONE</div><h2>Dati e immagini</h2></div><button class="icon-btn" value="cancel">×</button></div>
       <div class="data-panel">
         <p><b>Record:</b> il prototipo è già predisposto per ricevere l'importazione dall'Access.</p>
-        <p><b>Immagini:</b> ogni caso dispone di una galleria separata Anomalia / Soluzione. I collegamenti potranno essere popolati in un secondo momento quando recupereremo la cartella sul PC dell'altro utente.</p>
+        <p><b>Allegati:</b> Anomalia, aggiornamenti e Soluzione accettano immagini e documenti tecnici. Nel prototipo i file sono conservati localmente nel browser tramite IndexedDB; nella versione definitiva saranno nello storage centrale.</p>
         <button type="button" class="btn soft" id="btnExportJson">Esporta dati prototipo JSON</button>
         <label class="import-label">Importa JSON<input type="file" id="jsonImport" accept="application/json,.json"></label>
       </div>
@@ -193,6 +210,9 @@ function warrantyCoefficient(cost){
 // Compatibilità con dati salvati da versioni precedenti del prototipo.
 cases=cases.map(c=>{
   if(!c.images) c.images={problem:[],solution:[]};
+  if(!c.attachments) c.attachments={anomaly:[],solution:[]};
+  if(!Array.isArray(c.attachments.anomaly)) c.attachments.anomaly=[];
+  if(!Array.isArray(c.attachments.solution)) c.attachments.solution=[];
   if(!Array.isArray(c.anomalyParts)) c.anomalyParts=[];
   if(!Array.isArray(c.solutionParts)) c.solutionParts=[];
   if(c.solution==null) c.solution='';
@@ -224,13 +244,16 @@ function bindRows(){
   document.querySelectorAll('tbody tr').forEach(r=>r.addEventListener('click',e=>{if(e.target.classList.contains('rowcheck')) return; openCase(r.dataset.id)}));
   document.querySelectorAll('.rowcheck').forEach(cb=>cb.addEventListener('change',e=>{let c=cases.find(x=>x.id===cb.dataset.id);c.selected=cb.checked;save()}));
 }
-function imageSection(c,type,title){
-  const imgs=(c.images&&c.images[type])||[];
-  const gallery=imgs.length
-    ? `<div class="image-gallery">${imgs.map((im,i)=>`<figure class="image-card"><img src="${im.url}" alt="${im.name||title}" loading="lazy"><figcaption>${im.name||`${title} ${i+1}`}</figcaption></figure>`).join('')}</div>`
-    : `<div class="image-empty"><div class="image-empty-icon">▧</div><div><b>Nessuna immagine importata</b><div class="muted">La sezione è già pronta. Le immagini collegate dall'Access verranno associate successivamente.</div></div></div>`;
-  return `<div class="case-section"><h3>${title}</h3>${gallery}</div>`;
-}
+function openAttachmentDB(){return new Promise((resolve,reject)=>{const r=indexedDB.open('FailureAnalysisFiles',1);r.onupgradeneeded=()=>{const db=r.result;if(!db.objectStoreNames.contains('files'))db.createObjectStore('files',{keyPath:'id'});};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});}
+async function persistFiles(fileList){const files=[...fileList||[]];if(!files.length)return[];const db=await openAttachmentDB();const tx=db.transaction('files','readwrite'),store=tx.objectStore('files');const meta=[];for(const f of files){const id=crypto.randomUUID();store.put({id,blob:f,name:f.name,type:f.type||'application/octet-stream',size:f.size,created:new Date().toISOString()});meta.push({id,name:f.name,type:f.type||'application/octet-stream',size:f.size});}await new Promise((res,rej)=>{tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});db.close();return meta;}
+async function getAttachmentBlob(id){const db=await openAttachmentDB();const tx=db.transaction('files','readonly');const req=tx.objectStore('files').get(id);const row=await new Promise((res,rej)=>{req.onsuccess=()=>res(req.result);req.onerror=()=>rej(req.error)});db.close();return row||null;}
+const isImageMeta=a=>String(a?.type||'').startsWith('image/');
+const fmtSize=n=>{n=Number(n)||0;if(n<1024)return n+' B';if(n<1048576)return (n/1024).toFixed(1)+' KB';return (n/1048576).toFixed(1)+' MB';};
+function attachmentSection(items,title,sectionKey){items=items||[];const imgs=items.filter(isImageMeta),docs=items.filter(x=>!isImageMeta(x));return `<div class="case-section"><h3>${esc(title)}</h3>${!items.length?'<div class="attachment-empty">Nessun allegato.</div>':''}${imgs.length?`<div class="attachment-images">${imgs.map(a=>`<div class="attachment-image"><img data-blob-img="${a.id}" alt="${esc(a.name)}"><div class="cap"><span>${esc(a.name)}</span><button class="file-action" data-attachment-open="${a.id}" type="button">Apri</button></div></div>`).join('')}</div>`:''}${docs.length?`<div class="attachment-files">${docs.map(a=>`<div class="attachment-file"><div class="file-icon">${esc((a.name.split('.').pop()||'FILE').slice(0,5).toUpperCase())}</div><div class="file-meta"><div class="file-name">${esc(a.name)}</div><div class="file-sub">${esc(a.type||'File')} · ${fmtSize(a.size)}</div></div><div class="file-actions"><button class="file-action" data-attachment-open="${a.id}" type="button">Apri</button><button class="file-action" data-attachment-download="${a.id}" data-name="${esc(a.name)}" type="button">Scarica</button></div></div>`).join('')}</div>`:''}</div>`;}
+async function hydrateAttachments(root=document){for(const img of root.querySelectorAll('img[data-blob-img]')){try{const row=await getAttachmentBlob(img.dataset.blobImg);if(row?.blob){const u=URL.createObjectURL(row.blob);img.src=u;img.onload=()=>URL.revokeObjectURL(u);}}catch(e){}}
+root.querySelectorAll('[data-attachment-open]').forEach(b=>b.onclick=async()=>{const row=await getAttachmentBlob(b.dataset.attachmentOpen);if(!row?.blob){alert('File non disponibile in questo browser.');return;}const u=URL.createObjectURL(row.blob);window.open(u,'_blank');setTimeout(()=>URL.revokeObjectURL(u),60000);});
+root.querySelectorAll('[data-attachment-download]').forEach(b=>b.onclick=async()=>{const row=await getAttachmentBlob(b.dataset.attachmentDownload);if(!row?.blob){alert('File non disponibile in questo browser.');return;}const u=URL.createObjectURL(row.blob),a=document.createElement('a');a.href=u;a.download=b.dataset.name||row.name||'allegato';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);});}
+function renderPendingFiles(input,listId){const box=document.getElementById(listId);if(!box)return;box.innerHTML='';[...(input.files||[])].forEach(f=>{const row=document.createElement('div');row.className='pending-file';const lead=document.createElement(isImageMeta({type:f.type})?'img':'div');if(lead.tagName==='IMG'){lead.className='pending-file-thumb';const u=URL.createObjectURL(f);lead.src=u;lead.onload=()=>URL.revokeObjectURL(u);}else{lead.className='file-icon';lead.textContent=(f.name.split('.').pop()||'FILE').slice(0,5).toUpperCase();}row.appendChild(lead);const meta=document.createElement('div');meta.className='file-meta';meta.innerHTML=`<div class="file-name">${esc(f.name)}</div><div class="file-sub">${esc(f.type||'File')} · ${fmtSize(f.size)}</div>`;row.appendChild(meta);box.appendChild(row);});}
 
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 function normalizeParts(parts,withQty=false){
@@ -264,7 +287,8 @@ function renderHistory(history){
    if(h.deadline!==undefined) changes.push(`<div class="timeline-change"><span>Scadenza</span><strong>${esc(dateIT(h.deadline))}</strong></div>`);
    if(h.status!==undefined) changes.push(`<div class="timeline-change"><span>Stato caso</span><strong>${esc(h.status||'—')}</strong></div>`);
    const parts=(h.parts&&h.parts.length)?`<div class="timeline-parts"><div class="timeline-parts-title">Ricambi discussi / richiesti</div>${partsTable(h.parts,true)}</div>`:'';
-   return `<div class="timeline-item"><div class="timeline-date">${esc(h.date||'')}</div><div class="timeline-note">${esc(h.note||'Aggiornamento riunione')}</div>${changes.length?`<div class="timeline-changes">${changes.join('')}</div>`:''}${parts}</div>`;
+   const atts=(h.attachments&&h.attachments.length)?attachmentSection(h.attachments,'Allegati riunione','history'):'';
+   return `<div class="timeline-item"><div class="timeline-date">${esc(h.date||'')}</div><div class="timeline-note">${esc(h.note||'Aggiornamento riunione')}</div>${changes.length?`<div class="timeline-changes">${changes.join('')}</div>`:''}${parts}${atts}</div>`;
  }).join('');
 }
 
@@ -277,10 +301,10 @@ function openCase(id){
  <div class="case-detail-grid">
    <div class="case-main-column">
      <div class="case-section"><h3>ANOMALIA</h3><p>${esc(c.description||'—')}</p><p><b>Modelli:</b> ${esc(c.models.join(', ')||'—')} &nbsp; · &nbsp; <b>Responsabile:</b> ${esc(c.owner||'—')}</p><h4>Ricambi coinvolti</h4>${partsTable(c.anomalyParts,false)}</div>
-     ${imageSection(c,'problem','Immagini anomalia')}
+     ${attachmentSection(c.attachments?.anomaly||[],'Allegati ANOMALIA','anomaly')}
      <div class="case-section"><h3>Azione corrente</h3><div class="action-card"><b>${esc(c.action||'Nessuna azione')}</b><div class="muted">${esc(c.owner||'—')} · scadenza ${dateIT(c.deadline)}</div></div></div>
-     <div class="case-section"><h3>SOLUZIONE</h3><div class="solution-text">${esc(c.solution||'—')}</div><h4>Ricambi soluzione</h4>${partsTable(c.solutionParts,true)}</div>
-     ${imageSection(c,'solution','Immagini soluzione')}
+     <div class="case-section"><div class="section-title-actions"><h3>SOLUZIONE</h3><button class="btn soft" type="button" id="editSolutionBtn">Modifica soluzione</button></div><div class="solution-text">${esc(c.solution||'—')}</div><h4>Ricambi soluzione</h4>${partsTable(c.solutionParts,true)}</div>
+     ${attachmentSection(c.attachments?.solution||[],'Allegati SOLUZIONE','solution')}
      <div class="case-section"><h3>Storico riunioni</h3><p class="muted">Verbale operativo del caso: decisioni, azioni, responsabili, scadenze e stato.</p>${renderHistory(c.history||[])}</div>
    </div>
    <aside class="case-score-side">
@@ -292,6 +316,8 @@ function openCase(id){
  </div>`;
  $('#dashboardView').classList.add('hidden'); $('#casePage').classList.remove('hidden');
  $('#pageUpdateCase').onclick=()=>openUpdate(c.id);
+ const es=$('#editSolutionBtn'); if(es)es.onclick=()=>openSolution(c.id);
+ hydrateAttachments($('#casePageBody'));
  window.scrollTo({top:0,behavior:'instant'});
 }
 function showAgenda(){window.currentCaseId=null;$('#casePage').classList.add('hidden');$('#dashboardView').classList.remove('hidden');window.scrollTo({top:0,behavior:'instant'});}
@@ -299,8 +325,11 @@ function openUpdate(id){
   const c=cases.find(x=>x.id===id); if(!c)return;
   populateOwnerSelects();
   const f=$('#updateForm'); f.elements.caseId.value=id; f.elements.note.value=''; f.elements.action.value=c.action||''; f.elements.owner.value=c.owner||''; f.elements.deadline.value=c.deadline||''; f.elements.status.value=c.status||'Aperto';
-  const up=document.getElementById('updateParts'); if(up)up.innerHTML='';
+  const up=document.getElementById('updateParts'); if(up)up.innerHTML=''; const fi=$('#updateFiles');if(fi)fi.value='';const fl=$('#updateFileList');if(fl)fl.innerHTML='';
   $('#updateDialog').showModal();
+}
+function openSolution(id){
+ const c=cases.find(x=>x.id===id);if(!c)return;const f=$('#solutionForm');f.elements.caseId.value=id;f.elements.solution.value=c.solution||'';const box=$('#solutionParts');if(box)box.innerHTML='';(c.solutionParts||[]).forEach(p=>addPartRow('solutionParts',true,p));const inp=$('#solutionFiles');if(inp)inp.value='';const list=$('#solutionFileList');if(list)list.innerHTML='';$('#solutionDialog').showModal();
 }
 function populateCatalogs(){
   modelCatalog=[...new Set([...modelCatalog,...cases.flatMap(c=>c.models||[]).filter(Boolean)])].sort((a,b)=>a.localeCompare(b,'it'));
@@ -325,26 +354,27 @@ function exportPPT(list){
 }
 $('#meetingDate').textContent=`Riunione del ${new Date().toLocaleDateString('it-IT',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}`;
 ['#search','#filterStatus','#filterPriority'].forEach(x=>$(x).addEventListener('input',render));
-$('#btnNewCase').onclick=()=>{populateScoreSelects();const a=document.getElementById('anomalyParts'),sol=document.getElementById('solutionParts');if(a)a.innerHTML='';if(sol)sol.innerHTML='';$('#caseDialog').showModal()};
+$('#btnNewCase').onclick=()=>{populateScoreSelects();const a=document.getElementById('anomalyParts');if(a)a.innerHTML='';const fi=$('#newAnomalyFiles');if(fi)fi.value='';const fl=$('#newAnomalyFileList');if(fl)fl.innerHTML='';$('#caseDialog').showModal()};
 $('#caseForm').addEventListener('input',updateScorePreview);
-$('#caseForm').addEventListener('submit',e=>{let f=new FormData(e.target);const frequencyCases=+f.get('frequencyCases')||0;const warrantyCost=+f.get('warrantyCost')||0;let scores={frequency:frequencyCoefficient(frequencyCases),safety:+f.get('safety'),sales:+f.get('sales'),warranty:warrantyCoefficient(warrantyCost),urgency:+f.get('urgency'),bonus:+f.get('bonus')||0};let score=Object.values(scores).reduce((a,b)=>a+b,0);const models=f.getAll('models').map(x=>String(x).trim()).filter(Boolean);const anomalyParts=partsFromForm(e.target,'anomaly',false),solutionParts=partsFromForm(e.target,'solution',true);cases.push({id:crypto.randomUUID(),ticket:f.get('ticket'),title:f.get('title'),description:f.get('description'),anomalyParts,solution:f.get('solution')||'',solutionParts,models,owner:f.get('owner'),status:f.get('status'),score,frequencyCases,warrantyCost,bonusReason:f.get('bonusReason')||'',action:f.get('action'),deadline:f.get('deadline'),created:new Date().toISOString().slice(0,10),scores,history:[[new Date().toLocaleDateString('it-IT'),'Caso creato']],images:{problem:[],solution:[]},selected:true});save();render();e.target.reset();resetPartRows();$('#modelsDropdown').removeAttribute('open');populateCatalogs();});
+$('#caseForm').addEventListener('submit',async e=>{e.preventDefault();let f=new FormData(e.target);const frequencyCases=+f.get('frequencyCases')||0;const warrantyCost=+f.get('warrantyCost')||0;let scores={frequency:frequencyCoefficient(frequencyCases),safety:+f.get('safety'),sales:+f.get('sales'),warranty:warrantyCoefficient(warrantyCost),urgency:+f.get('urgency'),bonus:+f.get('bonus')||0};let score=Object.values(scores).reduce((a,b)=>a+b,0);const models=f.getAll('models').map(x=>String(x).trim()).filter(Boolean);const anomalyParts=partsFromForm(e.target,'anomaly',false);let attachments=[];try{attachments=await persistFiles($('#newAnomalyFiles')?.files);}catch(err){alert('Impossibile salvare gli allegati: '+err.message);return;}cases.push({id:crypto.randomUUID(),ticket:f.get('ticket'),title:f.get('title'),description:f.get('description'),anomalyParts,solution:'',solutionParts:[],models,owner:f.get('owner'),status:f.get('status'),score,frequencyCases,warrantyCost,bonusReason:f.get('bonusReason')||'',action:f.get('action'),deadline:f.get('deadline'),created:new Date().toISOString().slice(0,10),scores,history:[[new Date().toLocaleDateString('it-IT'),'Caso creato']],attachments:{anomaly:attachments,solution:[]},images:{problem:[],solution:[]},selected:true});save();render();e.target.reset();resetPartRows();$('#modelsDropdown').removeAttribute('open');populateCatalogs();$('#caseDialog').close('saved');});
 $('#btnScoring').onclick=()=>{scoringEditor();$('#scoringDialog').showModal()};
 $('#scoringForm').addEventListener('submit',e=>{if(e.submitter?.value==='cancel')return;document.querySelectorAll('.score-group[data-key]').forEach(g=>{let k=g.dataset.key;let rows=[...g.querySelectorAll('.score-line')].map(line=>[line.querySelector('[data-t=label]').value,+line.querySelector('[data-t=value]').value]);scoring[k]=rows});save();});
 $('#btnMeetingSnapshot').onclick=()=>{meetings.unshift({date:new Date().toISOString(),cases:JSON.parse(JSON.stringify(cases))});save();alert('Snapshot riunione salvato.')};
 $('#btnMeetings').onclick=()=>{$('#meetingsList').innerHTML=meetings.length?meetings.map((m,i)=>`<div class="meeting-item"><div><b>${new Date(m.date).toLocaleString('it-IT')}</b><div class="muted">${m.cases.length} casi</div></div><span class="pill">Snapshot ${meetings.length-i}</span></div>`).join(''):'<div class="notice">Nessuna riunione salvata.</div>';$('#meetingsDialog').showModal()};
 $('#btnExportSelected').onclick=()=>exportPPT(cases.filter(c=>c.selected));$('#btnExportAll').onclick=()=>exportPPT(cases.filter(c=>c.status!=='Risolto'));
-$('#updateForm').addEventListener('submit',e=>{
-  if(e.submitter?.value==='cancel')return;
+$('#updateForm').addEventListener('submit',async e=>{
+  e.preventDefault();
   const f=new FormData(e.target), c=cases.find(x=>x.id===f.get('caseId')); if(!c)return;
   const note=String(f.get('note')||'').trim();
-  if(!note){e.preventDefault();alert('Inserisci un aggiornamento prima di salvare.');e.target.elements.note.focus();return;}
+  if(!note){alert('Inserisci un aggiornamento prima di salvare.');e.target.elements.note.focus();return;}
   const nextAction=String(f.get('action')||'').trim(), nextOwner=String(f.get('owner')||'').trim(), nextDeadline=String(f.get('deadline')||''), nextStatus=String(f.get('status')||'Aperto');
-  const updateParts=partsFromForm(e.target,'update',true);
+  const updateParts=partsFromForm(e.target,'update',true);let attachments=[];try{attachments=await persistFiles($('#updateFiles')?.files);}catch(err){alert('Impossibile salvare gli allegati: '+err.message);return;}
   c.history=c.history||[];
-  c.history.unshift({date:new Date().toLocaleDateString('it-IT'),note,action:nextAction,owner:nextOwner,deadline:nextDeadline,status:nextStatus,parts:updateParts});
+  c.history.unshift({date:new Date().toLocaleDateString('it-IT'),note,action:nextAction,owner:nextOwner,deadline:nextDeadline,status:nextStatus,parts:updateParts,attachments});
   c.action=nextAction; c.owner=nextOwner; c.deadline=nextDeadline; c.status=nextStatus;
-  save(); render(); openCase(c.id);
+  save(); render(); $('#updateDialog').close('saved'); openCase(c.id);
 });
+$('#solutionForm').addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(e.target),c=cases.find(x=>x.id===f.get('caseId'));if(!c)return;let added=[];try{added=await persistFiles($('#solutionFiles')?.files);}catch(err){alert('Impossibile salvare gli allegati: '+err.message);return;}c.solution=String(f.get('solution')||'').trim();c.solutionParts=partsFromForm(e.target,'solution',true);c.attachments=c.attachments||{anomaly:[],solution:[]};c.attachments.solution=[...(c.attachments.solution||[]),...added];c.history=c.history||[];c.history.unshift({date:new Date().toLocaleDateString('it-IT'),note:'Soluzione aggiornata',action:c.action,owner:c.owner,deadline:c.deadline,status:c.status,parts:c.solutionParts,attachments:added});save();$('#solutionDialog').close('saved');openCase(c.id);});
 $('#btnData').onclick=()=>$('#dataDialog').showModal();
 $('#btnExportJson').onclick=()=>{
   const blob=new Blob([JSON.stringify({version:3,exportedAt:new Date().toISOString(),cases,scoring,meetings},null,2)],{type:'application/json'});
@@ -356,9 +386,12 @@ $('#jsonImport').addEventListener('change',async e=>{
 });
 $('#backToAgenda').onclick=showAgenda;
 document.addEventListener('change',e=>{if(e.target.matches('#modelsOptions input'))updateModelsSummary();});
+$('#newAnomalyFiles')?.addEventListener('change',e=>renderPendingFiles(e.target,'newAnomalyFileList'));
+$('#updateFiles')?.addEventListener('change',e=>renderPendingFiles(e.target,'updateFileList'));
+$('#solutionFiles')?.addEventListener('change',e=>renderPendingFiles(e.target,'solutionFileList'));
 document.addEventListener('click',e=>{const btn=e.target.closest('[data-add-part]');if(!btn)return;const id=btn.dataset.addPart;addPartRow(id,id!=='anomalyParts');});
 document.querySelectorAll('[data-close-dialog]').forEach(btn=>btn.addEventListener('click',()=>{const d=document.getElementById(btn.dataset.closeDialog); if(d?.open)d.close('cancel');}));
-['caseDialog','updateDialog','scoringDialog','meetingsDialog','dataDialog'].forEach(id=>{const d=document.getElementById(id);if(!d)return;d.addEventListener('click',e=>{if(e.target===d){const r=d.getBoundingClientRect();const inside=e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;if(!inside)d.close('cancel');}});});
+['caseDialog','updateDialog','solutionDialog','scoringDialog','meetingsDialog','dataDialog'].forEach(id=>{const d=document.getElementById(id);if(!d)return;d.addEventListener('click',e=>{if(e.target===d){const r=d.getBoundingClientRect();const inside=e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;if(!inside)d.close('cancel');}});});
 populateCatalogs(); render();
 
 </script>
