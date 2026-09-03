@@ -17,7 +17,7 @@ button,input,select,textarea{font:inherit} button{cursor:pointer}
 .main{padding:24px 28px;min-width:0}.page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:20px}.page-title{font-size:28px;font-weight:800;margin:0}.sub{color:var(--muted);margin-top:6px}
 .kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:18px}.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}.kpi strong{font-size:26px;display:block}.kpi span{color:var(--muted);font-size:13px}
 .toolbar{display:flex;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:14px}.toolbar input,.toolbar select{border:1px solid var(--line);border-radius:8px;padding:9px 10px;background:#fff}.toolbar input{min-width:280px;flex:1}
-.table-card{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}.table{width:100%;border-collapse:collapse}.table th,.table td{padding:13px 14px;border-bottom:1px solid #edf1f5;text-align:left;font-size:14px}.table th{background:#f8fafc;color:#536273;font-size:12px;text-transform:uppercase;letter-spacing:.4px}.table tbody tr:hover{background:#f8fbfe}.clickable{cursor:pointer}.priority-rank{font-weight:900;font-size:16px;color:#12263a}.score-pill{display:inline-flex;min-width:42px;justify-content:center;padding:5px 9px;border-radius:16px;font-weight:900}.score-high{background:#fee4e2;color:#b42318}.score-medium{background:#fff0c2;color:#8a5b00}.score-low{background:#d1fadf;color:#067647}.status{display:inline-flex;padding:5px 9px;border-radius:16px;font-size:12px;font-weight:800}.open{background:#fee4e2;color:#b42318}.suspended{background:#fff0c2;color:#8a5b00}.closed{background:#d1fadf;color:#067647}.trash{background:#f2f4f7;color:#475467}
+.table-card{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}.table{width:100%;border-collapse:collapse}.table th,.table td{padding:13px 14px;border-bottom:1px solid #edf1f5;text-align:left;font-size:14px}.table th{background:#f8fafc;color:#536273;font-size:12px;text-transform:uppercase;letter-spacing:.4px}.table tbody tr:hover{background:#f8fbfe}.clickable{cursor:pointer}.priority-rank{font-weight:900;font-size:16px;color:#12263a}.score-pill{display:inline-flex;min-width:42px;justify-content:center;padding:5px 9px;border-radius:16px;font-weight:900}.score-high{background:#fee4e2;color:#b42318}.score-mid{background:#fff0c2;color:#8a5b00}.score-low{background:#d1fadf;color:#067647}.status{display:inline-flex;padding:5px 9px;border-radius:16px;font-size:12px;font-weight:800}.open{background:#fee4e2;color:#b42318}.suspended{background:#fff0c2;color:#8a5b00}.closed{background:#d1fadf;color:#067647}.trash{background:#f2f4f7;color:#475467}
 .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;box-shadow:0 1px 0 rgba(0,0,0,.02)}.section-title{font-size:15px;text-transform:uppercase;letter-spacing:.5px;color:#445465;font-weight:800;margin:0 0 12px}.muted{color:var(--muted)}
 .case-layout{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:16px;align-items:start}.case-main{display:flex;flex-direction:column;gap:14px}.case-side{position:sticky;top:94px;display:flex;flex-direction:column;gap:14px}.case-header{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.case-id{font-size:14px;color:var(--muted);font-weight:700}.case-title{font-size:26px;font-weight:800;margin:5px 0 0}.actions{display:flex;gap:8px;flex-wrap:wrap}.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.meta-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.meta{background:#f8fafc;border:1px solid #edf1f5;border-radius:9px;padding:10px}.meta b{display:block;font-size:12px;color:#667788;margin-bottom:4px}.parts-table{width:100%;border-collapse:collapse}.parts-table td,.parts-table th{border-bottom:1px solid #edf1f5;padding:8px 6px;text-align:left;font-size:13px}
 .attach-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}.attachment{border:1px solid var(--line);border-radius:10px;background:#fafbfd;overflow:hidden}.attachment img{width:100%;height:140px;object-fit:cover;display:block;background:#eef2f6}.attachment-body{padding:10px}.attachment-name{font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.attachment-tools{display:flex;gap:6px;margin-top:8px}.file-icon{height:140px;display:grid;place-items:center;font-size:40px;background:#eef2f6;color:#5d6c7a}
@@ -34,8 +34,14 @@ button,input,select,textarea{font:inherit} button{cursor:pointer}
 .agenda-actions{display:flex;gap:10px;flex-wrap:wrap}
 .meeting-card{border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px;background:#fff}
 .meeting-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
-.meeting-cases{margin-top:12px;display:flex;flex-wrap:wrap;gap:7px}
-.meeting-chip{background:#eef4f8;border-radius:16px;padding:5px 9px;font-size:12px;font-weight:700}
+.meeting-cases{margin-top:14px}
+.snapshot-frame{border:1px solid var(--line);border-radius:10px;overflow:auto;background:#fff}
+.snapshot-table{width:100%;border-collapse:collapse;min-width:980px}
+.snapshot-table th,.snapshot-table td{padding:9px 10px;border-bottom:1px solid #edf1f5;text-align:left;font-size:12px;vertical-align:top}
+.snapshot-table th{background:#f8fafc;color:#536273;text-transform:uppercase;letter-spacing:.35px;font-size:10px}
+.snapshot-table tr:last-child td{border-bottom:0}
+.snapshot-score{display:inline-flex;min-width:34px;justify-content:center;padding:3px 7px;border-radius:14px;font-weight:900}
+.snapshot-note{font-size:12px;color:#667085;margin-top:8px}
 
 </style>
 </head>
@@ -146,7 +152,7 @@ function allCaseImages(c){
  return imgs;
 }
 function historyChunks(c,maxPerSlide=5){
- const hist=(c.updates||[]).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+ const hist=(c.updates||[]).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
  const chunks=[];for(let i=0;i<hist.length;i+=maxPerSlide)chunks.push(hist.slice(i,i+maxPerSlide));return chunks;
 }
 async function exportAgendaPptx(cases,dateOverride){
@@ -232,10 +238,45 @@ async function exportAgendaPptx(cases,dateOverride){
  }
  const file=`Failure_Analysis_${d.replaceAll('-','')}.pptx`;await pptx.writeFile({fileName:file});
 }
+function deleteMeetingSnapshot(id){
+ const m=(state.meetings||[]).find(x=>x.id===id);
+ if(!m)return;
+ if(!confirm(`Eliminare lo snapshot della riunione del ${fmtDate(m.date)}?`))return;
+ state.meetings=(state.meetings||[]).filter(x=>x.id!==id);
+ save();renderMeetings();toast('Snapshot eliminato');
+}
 function renderMeetings(){
- const ms=[...(state.meetings||[])].reverse();
- document.getElementById('app').innerHTML=`<div class="page-head"><div><h1 class="page-title">Riunioni</h1><div class="sub">Snapshot dell’Agenda Failure Analysis salvati per data.</div></div></div><div>${ms.length?ms.map(m=>{const cs=m.cases||[];return `<div class="meeting-card"><div class="meeting-head"><div><div class="timeline-date">${fmtDate(m.date)}</div><div class="muted" style="margin-top:4px">${cs.length} casi salvati</div></div><div class="actions">${cs.length?`<button class="btn btn-soft btn-sm export-meeting" data-meeting="${m.id}">Esporta PPTX</button>`:''}</div></div><div class="meeting-cases">${cs.length?cs.map((c,i)=>`<span class="meeting-chip">${i+1}. Scheda ${esc(c.sheet)} — ${esc(c.title)}</span>`).join(''):'Snapshot storico senza dettaglio casi.'}</div></div>`}).join(''):'<div class="card empty">Nessuna riunione salvata. Crea uno snapshot dalla pagina Agenda riunione.</div>'}</div>`;
- document.querySelectorAll('.export-meeting').forEach(b=>b.onclick=()=>{const m=state.meetings.find(x=>x.id===b.dataset.meeting);if(m)exportAgendaPptx(m.cases||[],m.date)})
+ const ms=[...(state.meetings||[])].sort((a,b)=>String(b.createdAt||b.date||'').localeCompare(String(a.createdAt||a.date||'')));
+ document.getElementById('app').innerHTML=`<div class="page-head"><div><h1 class="page-title">Riunioni</h1><div class="sub">Fotografie dell’Agenda Failure Analysis salvate per data.</div></div></div>
+ <div>${ms.length?ms.map(m=>{
+   const cs=(m.cases||[]).slice().sort((a,b)=>total(b)-total(a)||String(b.sheet).localeCompare(String(a.sheet),undefined,{numeric:true}));
+   return `<div class="meeting-card">
+     <div class="meeting-head">
+       <div><div class="timeline-date">${fmtDate(m.date)}</div><div class="muted" style="margin-top:4px">${cs.length} casi nell’Agenda</div></div>
+       <div class="actions">
+         ${cs.length?`<button class="btn btn-soft btn-sm export-meeting" data-meeting="${m.id}">Esporta PPTX</button>`:''}
+         <button class="btn btn-danger btn-sm delete-meeting" data-meeting="${m.id}">Elimina snapshot</button>
+       </div>
+     </div>
+     <div class="meeting-cases">
+       ${cs.length?`<div class="snapshot-frame"><table class="snapshot-table">
+         <thead><tr><th>Priorità</th><th>Punteggio</th><th>Scheda</th><th>ANOMALIA</th><th>Modelli</th><th>Ente</th><th>Azione corrente</th><th>Stato</th></tr></thead>
+         <tbody>${cs.map((c,i)=>`<tr>
+           <td><b>${i+1}</b></td>
+           <td><span class="snapshot-score ${scoreClass(total(c))}">${total(c)}</span></td>
+           <td><b>${esc(c.sheet)}</b></td>
+           <td>${esc(c.title)}</td>
+           <td>${esc((c.models||[]).join(', '))}</td>
+           <td>${esc(c.entity||'—')}</td>
+           <td>${esc(c.currentAction?.text||'—')}</td>
+           <td><span class="status ${statusClass(c.status)}">${statusLabel(c.status)}</span></td>
+         </tr>`).join('')}</tbody>
+       </table></div><div class="snapshot-note">Snapshot salvato: questa vista resta invariata anche se i casi vengono modificati successivamente.</div>`:'<div class="empty">Snapshot storico senza casi.</div>'}
+     </div>
+   </div>`;
+ }).join(''):'<div class="card empty">Nessuna riunione salvata. Crea uno snapshot dalla pagina Agenda riunione.</div>'}</div>`;
+ document.querySelectorAll('.export-meeting').forEach(b=>b.onclick=()=>{const m=state.meetings.find(x=>x.id===b.dataset.meeting);if(m)exportAgendaPptx(m.cases||[],m.date)});
+ document.querySelectorAll('.delete-meeting').forEach(b=>b.onclick=()=>deleteMeetingSnapshot(b.dataset.meeting));
 }
 function moveToTrash(id){if(!confirm('Spostare questo caso nel Cestino? Potrai ripristinarlo in seguito.'))return;const c=state.cases.find(x=>x.id===id);c.deletedAt=new Date().toISOString();save();currentCaseId=null;setView('agenda');toast('Caso spostato nel Cestino')}
 function deleteAttachment(caseId,kind,attId){if(!confirm('Eliminare questo allegato?'))return;const c=state.cases.find(x=>x.id===caseId);if(kind==='anomaly')c.attachments=(c.attachments||[]).filter(a=>a.id!==attId);else if(kind==='solution')c.solution.attachments=(c.solution.attachments||[]).filter(a=>a.id!==attId);else if(kind.startsWith('update:')){const uid=kind.split(':')[1];const u=(c.updates||[]).find(x=>x.id===uid);if(u)u.attachments=(u.attachments||[]).filter(a=>a.id!==attId)}save();renderCase(caseId);toast('Allegato eliminato')}
