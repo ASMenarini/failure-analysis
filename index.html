@@ -130,6 +130,22 @@ function statusLabel(s){return s==='open'?'Aperto':s==='suspended'?'Sospeso':'Ri
 function statusClass(s){return s==='open'?'open':s==='suspended'?'suspended':'closed'}
 function scoreClass(v){v=Number(v)||0;return v>=60?'score-high':v>=40?'score-mid':'score-low'}
 function render(){if(currentCaseId){renderCase(currentCaseId);return} if(['agenda','cases','open','suspended','closed'].includes(currentView))renderList(); else if(currentView==='actions')renderActions(); else if(currentView==='meetings')renderMeetings(); else renderTrash();}
+
+function categoryLabel(v){
+  const s=String(v||'').trim().toLowerCase();
+  if(s==='riparativa') return 'Riparativa';
+  if(s==='service') return 'Service';
+  return '';
+}
+function ensureSolution(c){
+  c.solution=c.solution||{text:'',cid:'',cutIn:'',parts:[],attachments:[]};
+  c.solution.parts=Array.isArray(c.solution.parts)?c.solution.parts:[];
+  c.solution.attachments=Array.isArray(c.solution.attachments)?c.solution.attachments:[];
+  if(c.solution.cid===undefined || c.solution.cid===null) c.solution.cid=c.legacy?.cn||'';
+  if(c.solution.cutIn===undefined || c.solution.cutIn===null) c.solution.cutIn=c.legacy?.cutIn||'';
+  return c.solution;
+}
+
 function renderList(){
  const all=activeCases();
  const opens=all.filter(c=>c.status==='open').length,susp=all.filter(c=>c.status==='suspended').length,closed=all.filter(c=>c.status==='closed').length;
