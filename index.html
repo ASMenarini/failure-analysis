@@ -259,9 +259,27 @@ button,input,select,textarea{font:inherit} button{cursor:pointer}
 }
 
 
+/* Mobile navigation drawer — solo smartphone */
+.mobile-menu-btn{display:none}
+.mobile-nav-backdrop{display:none}
+
 /* MOBILE ONLY — desktop invariato */
 @media(max-width:700px){
   .main{padding:14px 12px}
+  .topbar{padding:0 12px;gap:10px}
+  .brand{gap:9px}
+  .brand-badge{font-size:19px;letter-spacing:.45px}
+  .top-actions{gap:7px;align-items:center}
+  .top-actions .btn{padding:9px 11px;font-size:12px}
+  .mobile-menu-btn{display:inline-grid;place-items:center;width:42px;height:42px;padding:0;border-radius:10px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);color:#fff;font-size:23px;line-height:1}
+  .mobile-menu-btn:active{transform:scale(.97)}
+  .sidebar{display:block;position:fixed;z-index:120;top:64px;left:0;bottom:0;width:min(300px,86vw);padding:18px 12px;background:#eef1f4;box-shadow:12px 0 30px rgba(15,23,42,.18);transform:translateX(-105%);transition:transform .22s ease;overflow-y:auto}
+  .sidebar.mobile-open{transform:translateX(0)}
+  .mobile-nav-backdrop{display:block;position:fixed;z-index:110;inset:64px 0 0;background:rgba(15,23,42,.38);opacity:0;pointer-events:none;transition:opacity .22s ease}
+  .mobile-nav-backdrop.show{opacity:1;pointer-events:auto}
+  body.mobile-nav-open{overflow:hidden}
+  .sidebar .nav-item{min-height:48px;font-size:14px;margin-bottom:6px}
+
   .page-head{gap:12px;margin-bottom:14px}
   .page-title{font-size:22px}
   .sub{font-size:13px}
@@ -329,7 +347,7 @@ button,input,select,textarea{font:inherit} button{cursor:pointer}
 <body>
 <header class="topbar">
   <div class="brand"><div class="brand-badge">MENARINI</div><div class="brand-title">FAILURE ANALYSIS</div></div>
-  <div class="top-actions"><button class="btn btn-primary" id="newCaseTop">+ Nuovo caso</button></div>
+  <div class="top-actions"><button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Apri navigazione" aria-expanded="false">☰</button><button class="btn btn-primary" id="newCaseTop">+ Nuovo caso</button></div>
 </header>
 <div class="shell">
   <aside class="sidebar">
@@ -344,6 +362,7 @@ button,input,select,textarea{font:inherit} button{cursor:pointer}
   </aside>
   <main class="main" id="app"></main>
 </div>
+<div class="mobile-nav-backdrop" id="mobileNavBackdrop"></div>
 <div class="modal-backdrop" id="modalBackdrop"></div>
 <div class="toast" id="toast"></div>
 <script>
@@ -381,7 +400,8 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 function agendaCases(){const ids=new Set(state.agendaIds||[]);return activeCases().filter(c=>ids.has(c.id)).sort((a,b)=>total(b)-total(a)||String(b.sheet).localeCompare(String(a.sheet),undefined,{numeric:true}))}
 async function toggleAgenda(id,on){try{if(on)await api('/api/agenda',{method:'POST',body:JSON.stringify({case_id:id})});else await api('/api/agenda/'+encodeURIComponent(id),{method:'DELETE'});state.agendaIds=Array.isArray(state.agendaIds)?state.agendaIds:[];if(on){if(!state.agendaIds.includes(id))state.agendaIds.push(id)}else state.agendaIds=state.agendaIds.filter(x=>x!==id);save();if(currentCaseId)renderCase(currentCaseId);else render()}catch(e){alert('Errore Agenda: '+e.message)}}
 function refreshCounts(){const a=activeCases();const o=a.filter(c=>c.status==='open').length,sp=a.filter(c=>c.status==='suspended').length,cl=a.filter(c=>c.status==='closed').length;document.getElementById('navAgenda').textContent=agendaCases().length;document.getElementById('navAll').textContent=a.length;document.getElementById('navOpen').textContent=o;document.getElementById('navSuspended').textContent=sp;document.getElementById('navClosed').textContent=cl;document.getElementById('navTrash').textContent=trashedCases().length;document.getElementById('navActions').textContent=a.filter(c=>c.currentAction&&c.currentAction.text&&c.currentAction.status!=='Chiusa').length}
-function setView(v){currentView=v;currentCaseId=null;document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===v));render()}
+function closeMobileNav(){const sb=document.querySelector('.sidebar'),bd=document.getElementById('mobileNavBackdrop'),btn=document.getElementById('mobileMenuBtn');sb?.classList.remove('mobile-open');bd?.classList.remove('show');document.body.classList.remove('mobile-nav-open');btn?.setAttribute('aria-expanded','false')}
+function setView(v){currentView=v;currentCaseId=null;document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===v));closeMobileNav();render()}
 function statusLabel(s){return s==='open'?'Aperto':s==='suspended'?'Sospeso':'Risolto'}
 function statusClass(s){return s==='open'?'open':s==='suspended'?'suspended':'closed'}
 function scoreClass(v){v=Number(v)||0;return v>=60?'score-high':v>=40?'score-mid':'score-low'}
@@ -607,7 +627,7 @@ function openEditCase(c){const body=`<div class="form-grid"><div class="field"><
 function openUpdate(c){const body=`<div class="form-grid"><div class="field"><label>Data riunione</label><input type="date" id="uDate" value="${new Date().toISOString().slice(0,10)}"></div><div class="field"><label>Stato caso</label><select id="uCaseStatus"><option value="open" ${c.status==='open'?'selected':''}>Aperto</option><option value="suspended" ${c.status==='suspended'?'selected':''}>Sospeso</option><option value="closed" ${c.status==='closed'?'selected':''}>Risolto</option></select></div><div class="field full"><label class="required">Aggiornamento</label><textarea id="uText" placeholder="Cosa è emerso / cosa è stato deciso"></textarea></div><div class="field full"><label>Azione corrente</label><input id="uAction" value="${esc(c.currentAction?.text||'')}"></div><div class="field"><label>Responsabile</label><select id="uOwner"><option value="">—</option>${ENTITIES.map(x=>`<option ${x===c.currentAction?.owner?'selected':''}>${esc(x)}</option>`).join('')}</select></div><div class="field"><label>Scadenza</label><input type="date" id="uDue" value="${esc(c.currentAction?.due||'')}"></div><div class="field"><label>Stato azione</label><select id="uActionStatus"><option>Aperta</option><option>In attesa</option><option>Completata</option><option>Chiusa</option></select></div></div><div class="form-section"><div class="form-title">Ricambi discussi / richiesti</div>${partsEditor('updateParts',true)}</div><div class="form-section"><div class="form-title">Allegati aggiornamento</div><input type="file" id="uFiles" multiple></div>`;openModal('Aggiorna riunione',body,async close=>{const txt=document.getElementById('uText').value.trim();if(!txt){alert('Inserisci un aggiornamento prima di salvare.');return}const u={id:crypto.randomUUID(),date:document.getElementById('uDate').value,text:txt,action:document.getElementById('uAction').value.trim(),owner:document.getElementById('uOwner').value,due:document.getElementById('uDue').value,status:document.getElementById('uActionStatus').value,parts:collectParts('updateParts',true),attachments:[]};try{await api('/api/cases/'+encodeURIComponent(c.id),{method:'PUT',body:JSON.stringify({status:document.getElementById('uCaseStatus').value})});const files=document.getElementById('uFiles').files;const raw=await api('/api/cases/'+encodeURIComponent(c.id)+'/updates',{method:'POST',body:JSON.stringify({id:u.id,meeting_date:u.date,update_text:u.text,action_text:u.action,action_owner:u.owner,action_due:u.due||null,action_status:u.status,parts:apiParts(u.parts,true),update_current_action:true})});let mapped=mapCase(raw);state.cases[state.cases.findIndex(x=>x.id===c.id)]=mapped;if(files.length){await uploadFiles(c.id,files,'update',u.id);mapped=await reloadCase(c.id)}save();close();renderCase(c.id);toast(files.length?'Aggiornamento e allegati salvati':'Aggiornamento salvato')}catch(e){alert('Errore salvataggio aggiornamento: '+e.message)}});document.querySelector('[data-add-parts="updateParts"]').onclick=()=>addPartRow('updateParts',true)}
 function openSolution(c){const s=ensureSolution(c);const body=`<div class="form-grid"><div class="field full"><label>Descrizione soluzione</label><textarea id="sText">${esc(s.text||'')}</textarea></div><div class="field"><label>CID</label><input id="sCid" value="${esc(s.cid||'')}" placeholder="es. 30958"></div><div class="field"><label>CUT IN</label><input id="sCutIn" value="${esc(s.cutIn||'')}" placeholder="es. VIN / data / riferimento introduzione"></div></div><div class="form-section"><div class="form-title">Ricambi SOLUZIONE</div>${partsEditor('solutionParts',true)}</div><div class="form-section"><div class="form-title">Allegati SOLUZIONE</div><input type="file" id="sFiles" multiple><div class="hint">Gli allegati esistenti non vengono rimossi; puoi eliminarli direttamente dalla scheda.</div></div>`;openModal('Modifica soluzione',body,async close=>{ensureSolution(c);c.solution.text=document.getElementById('sText').value.trim();c.solution.cid=document.getElementById('sCid').value.trim();c.solution.cutIn=document.getElementById('sCutIn').value.trim();c.solution.parts=collectParts('solutionParts',true);try{const files=document.getElementById('sFiles').files;const raw=await api('/api/cases/'+encodeURIComponent(c.id),{method:'PUT',body:JSON.stringify(casePayload(c))});let mapped=mapCase(raw);state.cases[state.cases.findIndex(x=>x.id===c.id)]=mapped;if(files.length){await uploadFiles(c.id,files,'solution');mapped=await reloadCase(c.id)}save();close();renderCase(c.id);toast(files.length?'Soluzione e allegati aggiornati':'Soluzione aggiornata')}catch(e){alert('Errore aggiornamento soluzione: '+e.message)}});(s.parts||[]).forEach(p=>addPartRow('solutionParts',true,p));document.querySelector('[data-add-parts="solutionParts"]').onclick=()=>addPartRow('solutionParts',true)}
 
-document.querySelectorAll('.nav-item').forEach(n=>n.onclick=()=>setView(n.dataset.view));document.getElementById('newCaseTop').onclick=openNewCase;loadFromApi().catch(e=>{document.getElementById('app').innerHTML=`<div class="card"><h2>Connessione D1 non riuscita</h2><p>${esc(e.message)}</p><button class="btn btn-blue" onclick="location.reload()">Riprova</button></div>`;});
+document.querySelectorAll('.nav-item').forEach(n=>n.onclick=()=>setView(n.dataset.view));const mobileMenuBtn=document.getElementById('mobileMenuBtn'),mobileNavBackdrop=document.getElementById('mobileNavBackdrop'),mobileSidebar=document.querySelector('.sidebar');if(mobileMenuBtn){mobileMenuBtn.onclick=()=>{const open=!mobileSidebar.classList.contains('mobile-open');mobileSidebar.classList.toggle('mobile-open',open);mobileNavBackdrop.classList.toggle('show',open);document.body.classList.toggle('mobile-nav-open',open);mobileMenuBtn.setAttribute('aria-expanded',open?'true':'false')}}if(mobileNavBackdrop)mobileNavBackdrop.onclick=closeMobileNav;window.addEventListener('resize',()=>{if(window.innerWidth>700)closeMobileNav()});document.getElementById('newCaseTop').onclick=openNewCase;loadFromApi().catch(e=>{document.getElementById('app').innerHTML=`<div class="card"><h2>Connessione D1 non riuscita</h2><p>${esc(e.message)}</p><button class="btn btn-blue" onclick="location.reload()">Riprova</button></div>`;});
 })();
 </script>
 </body>
