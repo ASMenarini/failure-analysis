@@ -153,8 +153,8 @@ button,input,select,textarea{font:inherit} button{cursor:pointer}
 
 
 /* Bilanciamento colonne tabella casi */
-.table th:nth-child(5), .table td:nth-child(5){width:30%} /* ANOMALIA */
-.table th:nth-child(6), .table td:nth-child(6){width:13%} /* Modelli */
+.table th:nth-child(5), .table td:nth-child(5){width:38%} /* ANOMALIA */
+.table th:nth-child(6), .table td:nth-child(6){width:16%} /* Ente */
 
 </style>
 </head>
@@ -235,9 +235,9 @@ function renderList(){
  document.getElementById('app').innerHTML=`<div class="page-head"><div><h1 class="page-title">${title}</h1><div class="sub">${sub}</div></div>${right}</div>
  <div class="kpis"><div class="kpi clickable-kpi" data-kpi="cases"><strong>${all.length}</strong><span>Totale casi</span></div><div class="kpi clickable-kpi" data-kpi="open"><strong>${opens}</strong><span>Aperti</span></div><div class="kpi clickable-kpi" data-kpi="suspended"><strong>${susp}</strong><span>Sospesi</span></div><div class="kpi clickable-kpi" data-kpi="closed"><strong>${closed}</strong><span>Risolti</span></div><div class="kpi clickable-kpi" data-kpi="trash"><strong>${trashedCases().length}</strong><span>Nel cestino</span></div></div>
  <div class="toolbar"><input id="search" placeholder="Cerca scheda, anomalia, modello, ente…"><select id="statusFilter"><option value="">Tutti gli stati</option><option value="open">Aperti</option><option value="suspended">Sospesi</option><option value="closed">Risolti</option></select><select id="modelFilter"><option value="">Tutti i modelli</option>${MODELS.map(m=>`<option>${esc(m)}</option>`).join('')}</select></div>
- <div class="table-card"><table class="table"><thead><tr><th>Agenda</th><th>Priorità</th><th>Punteggio</th><th>Scheda</th><th>ANOMALIA</th><th>Modelli</th><th>Ente</th><th>Azione corrente</th><th>Stato</th></tr></thead><tbody id="caseRows"></tbody></table></div>`;
+ <div class="table-card"><table class="table"><thead><tr><th>Agenda</th><th>Priorità</th><th>Punteggio</th><th>Scheda</th><th>ANOMALIA</th><th>Ente</th><th>Azione corrente</th><th>Stato</th></tr></thead><tbody id="caseRows"></tbody></table></div>`;
  if(viewStatus){document.getElementById('statusFilter').value=viewStatus;document.getElementById('statusFilter').disabled=true;}
- const draw=()=>{const q=document.getElementById('search').value.toLowerCase(),sf=document.getElementById('statusFilter').value,mf=document.getElementById('modelFilter').value;const rr=rows.filter(c=>(!sf||c.status===sf)&&(!mf||c.models.includes(mf))&&(!q||[c.sheet,c.title,c.description,c.entity,...c.models].join(' ').toLowerCase().includes(q)));document.getElementById('caseRows').innerHTML=rr.length?rr.map((c,i)=>`<tr class="clickable" data-id="${c.id}"><td><input class="agenda-toggle" type="checkbox" data-agenda-id="${c.id}" ${state.agendaIds.includes(c.id)?'checked':''} title="Seleziona per Agenda riunione"></td><td><span class="priority-rank">${i+1}</span></td><td><span class="score-pill ${scoreClass(total(c))}">${total(c)}</span></td><td><b>${esc(c.sheet)}</b></td><td>${esc(c.title)}</td><td>${esc(c.models.join(', '))}</td><td>${esc(c.entity||'—')}</td><td>${esc(c.currentAction?.text||'—')}</td><td><span class="status ${statusClass(c.status)}">${statusLabel(c.status)}</span></td></tr>`).join(''):`<tr><td colspan="9" class="empty">${isAgenda?'Nessun caso selezionato per l’agenda. Selezionali da Tutti i casi / Aperti / Sospesi / Risolti.':'Nessun caso trovato'}</td></tr>`;document.querySelectorAll('#caseRows tr[data-id]').forEach(r=>r.onclick=e=>{if(e.target.matches('.agenda-toggle'))return;currentCaseId=r.dataset.id;render()});document.querySelectorAll('.agenda-toggle').forEach(cb=>cb.onchange=e=>{e.stopPropagation();toggleAgenda(cb.dataset.agendaId,cb.checked)})};
+ const draw=()=>{const q=document.getElementById('search').value.toLowerCase(),sf=document.getElementById('statusFilter').value,mf=document.getElementById('modelFilter').value;const rr=rows.filter(c=>(!sf||c.status===sf)&&(!mf||c.models.includes(mf))&&(!q||[c.sheet,c.title,c.description,c.entity,...c.models].join(' ').toLowerCase().includes(q)));document.getElementById('caseRows').innerHTML=rr.length?rr.map((c,i)=>`<tr class="clickable" data-id="${c.id}"><td><input class="agenda-toggle" type="checkbox" data-agenda-id="${c.id}" ${state.agendaIds.includes(c.id)?'checked':''} title="Seleziona per Agenda riunione"></td><td><span class="priority-rank">${i+1}</span></td><td><span class="score-pill ${scoreClass(total(c))}">${total(c)}</span></td><td><b>${esc(c.sheet)}</b></td><td>${esc(c.title)}</td><td>${esc(c.entity||'—')}</td><td>${esc(c.currentAction?.text||'—')}</td><td><span class="status ${statusClass(c.status)}">${statusLabel(c.status)}</span></td></tr>`).join(''):`<tr><td colspan="8" class="empty">${isAgenda?'Nessun caso selezionato per l’agenda. Selezionali da Tutti i casi / Aperti / Sospesi / Risolti.':'Nessun caso trovato'}</td></tr>`;document.querySelectorAll('#caseRows tr[data-id]').forEach(r=>r.onclick=e=>{if(e.target.matches('.agenda-toggle'))return;currentCaseId=r.dataset.id;render()});document.querySelectorAll('.agenda-toggle').forEach(cb=>cb.onchange=e=>{e.stopPropagation();toggleAgenda(cb.dataset.agendaId,cb.checked)})};
  draw();['search','statusFilter','modelFilter'].forEach(id=>document.getElementById(id).addEventListener(id==='search'?'input':'change',draw));
  document.querySelectorAll('[data-kpi]').forEach(k=>k.onclick=()=>setView(k.dataset.kpi));
  if(isAgenda){document.getElementById('snapshotAgendaBtn').onclick=createAgendaSnapshot;document.getElementById('exportAgendaBtn').onclick=()=>exportAgendaPptx(agendaCases())}
@@ -389,7 +389,7 @@ function renderMeetings(){
      </div>
      <div class="meeting-cases">
        ${cs.length?`<div class="snapshot-frame"><table class="snapshot-table">
-         <thead><tr><th>Priorità</th><th>Punteggio</th><th>Scheda</th><th>ANOMALIA</th><th>Modelli</th><th>Ente</th><th>Azione corrente</th><th>Stato</th></tr></thead>
+         <thead><tr><th>Priorità</th><th>Punteggio</th><th>Scheda</th><th>ANOMALIA</th><th>Ente</th><th>Azione corrente</th><th>Stato</th></tr></thead>
          <tbody>${cs.map((c,i)=>`<tr>
            <td><b>${i+1}</b></td>
            <td><span class="snapshot-score ${scoreClass(total(c))}">${total(c)}</span></td>
