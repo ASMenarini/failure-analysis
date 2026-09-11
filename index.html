@@ -540,6 +540,8 @@ document.getElementById('backBtn').onclick=()=>{currentCaseId=null;render()};doc
 function renderParts(parts=[],qty){if(!parts.length)return '<div class="muted" style="margin-top:10px">Nessun ricambio indicato.</div>';return `<div style="margin-top:12px"><b>Ricambi</b><table class="parts-table"><thead><tr><th>Part Number</th><th>Descrizione</th>${qty?'<th>Q.tà</th>':''}</tr></thead><tbody>${parts.map(p=>`<tr><td>${esc(p.pn||'—')}</td><td>${esc(p.desc||'—')}</td>${qty?`<td>${esc(p.qty||'—')}</td>`:''}</tr>`).join('')}</tbody></table></div>`}
 function attachmentExtension(a){const n=String(a?.name||'').trim();const m=n.match(/\.([a-z0-9]{1,8})$/i);return m?m[1].toUpperCase():'FILE'}
 function attachmentKindLabel(a){const ext=attachmentExtension(a);if(ext==='PDF')return 'Documento PDF';if(['PPT','PPTX'].includes(ext))return 'Presentazione';if(['DOC','DOCX','ODT','RTF'].includes(ext))return 'Documento';if(['XLS','XLSX','CSV','ODS'].includes(ext))return 'Foglio di calcolo';if(['MSG','EML'].includes(ext))return 'Messaggio e-mail';if(['ZIP','RAR','7Z'].includes(ext))return 'Archivio';return 'Allegato'}
+function isOfficePreviewable(a){return ['PPT','PPTX','DOC','DOCX','XLS','XLSX'].includes(attachmentExtension(a))}
+function officeViewerUrl(a){return 'https://view.officeapps.live.com/op/view.aspx?src='+encodeURIComponent(attachmentOpenUrl(a.id))}
 function renderLegacyMissing(a,caseId,kind){return `<div class="legacy-missing" title="${esc(a.legacyPath||a.name||'')}"><span class="legacy-badge">↗</span><div class="legacy-text"><div class="legacy-name">${esc(a.name||'Collegamento storico')}</div><div>File storico non migrato · non disponibile online</div></div><div class="legacy-actions"><button class="btn btn-danger btn-sm delete-attachment" data-case="${esc(caseId)}" data-kind="${esc(kind)}" data-att="${esc(a.id)}" type="button">Rimuovi</button></div></div>`}
 function renderAttachments(arr=[],kind,caseId){
 if(!arr.length)return '<div class="muted" style="margin-top:8px">Nessun allegato.</div>';
@@ -552,9 +554,11 @@ const media=img
 ?`<div class="attachment-media"><img class="hover-preview-source js-case-image-direct" data-image-src="${esc(a.dataUrl)}" data-image-name="${esc(a.name)}" data-image-id="${esc(a.id)}" data-preview-src="${esc(a.dataUrl)}" src="${esc(a.dataUrl)}" alt="${esc(a.name)}"></div>`
 :`<div class="doc-preview"><div class="doc-ext">${esc(attachmentExtension(a))}</div><div class="doc-kind">${esc(attachmentKindLabel(a))}</div></div>`;
 const pdf=isPdfAttachment(a);
+const office=isOfficePreviewable(a);
 const tools=img
 ?`<button class="btn btn-soft btn-sm open-image-inline" data-image-src="${esc(a.dataUrl)}" data-image-name="${esc(a.name)}" data-image-id="${esc(a.id)}" type="button">Apri / Zoom</button>`
-:pdf?`<button class="btn btn-soft btn-sm open-pdf-inline" data-att="${esc(a.id)}" data-name="${esc(a.name)}" type="button">Apri PDF</button>`:'';
+:pdf?`<button class="btn btn-soft btn-sm open-pdf-inline" data-att="${esc(a.id)}" data-name="${esc(a.name)}" type="button">Apri</button>`
+:office?`<a class="btn btn-soft btn-sm open-office-inline" href="${esc(officeViewerUrl(a))}" target="_blank" rel="noopener noreferrer">Apri</a>`:'';
 return `<div class="attachment ${img?'image-attachment':'document-attachment'}">${media}<div class="attachment-body"><div class="attachment-name" title="${esc(a.name)}">${esc(a.name)}</div><div class="attachment-tools">${tools}<a class="btn btn-ghost btn-sm" href="${attachmentDownloadUrl(a.id)}">Scarica</a><button class="btn btn-danger btn-sm delete-attachment" data-case="${caseId}" data-kind="${kind}" data-att="${a.id}">Elimina</button></div></div></div>`
 }).join('')}</div>`:'';
 return legacyHtml+onlineHtml;
