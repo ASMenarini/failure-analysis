@@ -342,6 +342,19 @@ background:#c9d7e4;
 .actions #deleteCaseBtn{grid-column:auto}
 }
 
+
+/* v13 — migrazione allegati storici */
+.migration-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0}
+.migration-stat{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px}
+.migration-stat strong{display:block;font-size:22px}.migration-stat span{font-size:12px;color:var(--muted)}
+.migration-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.migration-row{display:grid;grid-template-columns:1.1fr 1.4fr .8fr;gap:12px;align-items:start;background:#fff;border:1px solid var(--line);border-radius:10px;padding:11px 12px}
+.migration-row .legacy{font-size:12px;color:#667788;overflow-wrap:anywhere}.migration-row .found{font-size:13px;font-weight:700;overflow-wrap:anywhere}
+.migration-badge{display:inline-flex;border-radius:16px;padding:4px 8px;font-size:11px;font-weight:800;white-space:nowrap}
+.migration-ok{background:#d1fadf;color:#067647}.migration-missing{background:#fee4e2;color:#b42318}.migration-ambiguous{background:#fff0c2;color:#8a5b00}.migration-live{background:#eaf2f9;color:#0b4f8a}
+.migration-progress{height:8px;border-radius:8px;background:#e9eef3;overflow:hidden;margin-top:10px}.migration-progress>div{height:100%;background:var(--blue);width:0;transition:width .15s ease}
+@media(max-width:700px){.migration-summary{grid-template-columns:1fr 1fr}.migration-row{grid-template-columns:1fr}.migration-row>div:last-child{justify-self:start}}
+
 </style>
 </head>
 <body>
@@ -359,6 +372,7 @@ background:#c9d7e4;
 <div class="nav-item" data-view="actions">Azioni aperte <span class="nav-count" id="navActions">0</span></div>
 <div class="nav-item" data-view="meetings">Riunioni</div>
 <div class="nav-item" data-view="trash">Cestino <span class="nav-count" id="navTrash">0</span></div>
+<div class="nav-item" data-view="migration">Migra allegati</div>
 </aside>
 <main class="main" id="app"></main>
 </div>
@@ -405,7 +419,7 @@ function setView(v){currentView=v;currentCaseId=null;document.querySelectorAll('
 function statusLabel(s){return s==='open'?'Aperto':s==='suspended'?'Sospeso':'Risolto'}
 function statusClass(s){return s==='open'?'open':s==='suspended'?'suspended':'closed'}
 function scoreClass(v){v=Number(v)||0;return v>=60?'score-high':v>=40?'score-mid':'score-low'}
-function render(){if(currentCaseId){renderCase(currentCaseId);return} if(['agenda','cases','open','suspended','closed'].includes(currentView))renderList(); else if(currentView==='actions')renderActions(); else if(currentView==='meetings')renderMeetings(); else renderTrash();}
+function render(){if(currentCaseId){renderCase(currentCaseId);return} if(['agenda','cases','open','suspended','closed'].includes(currentView))renderList(); else if(currentView==='actions')renderActions(); else if(currentView==='meetings')renderMeetings(); else if(currentView==='migration')renderMigration(); else renderTrash();}
 
 function categoryLabel(v){
 const s=String(v||'').trim().toLowerCase();
@@ -610,6 +624,121 @@ document.getElementById('app').innerHTML=`<div class="page-head"><div><h1 class=
 document.querySelectorAll('.export-meeting').forEach(b=>b.onclick=()=>{const m=state.meetings.find(x=>x.id===b.dataset.meeting);if(m)exportAgendaPptx(m.cases||[],m.date)});
 document.querySelectorAll('.delete-meeting').forEach(b=>b.onclick=()=>deleteMeetingSnapshot(b.dataset.meeting));
 }
+
+let legacySourceFiles=[];
+let legacyMatches=[];
+
+function normalizeLegacyPath(v=''){
+  return String(v).normalize('NFKC').replace(/\\/g,'/').replace(/\/+/g,'/').trim().toLowerCase();
+}
+function baseName(v=''){
+  const p=normalizeLegacyPath(v).split('/');
+  return (p[p.length-1]||'').trim();
+}
+function suffixScore(a,b){
+  const aa=normalizeLegacyPath(a).split('/').filter(Boolean),bb=normalizeLegacyPath(b).split('/').filter(Boolean);
+  let i=aa.length-1,j=bb.length-1,n=0;
+  while(i>=0&&j>=0&&aa[i]===bb[j]){n++;i--;j--}
+  return n;
+}
+function collectLegacyAttachments(){
+  const out=[];
+  for(const c of state.cases||[]){
+    const push=(a,where)=>{if(a?.legacyPath)out.push({attachment:a,caseId:c.id,sheet:c.sheet,title:c.title,where})};
+    (c.attachments||[]).forEach(a=>push(a,'ANOMALIA'));
+    (c.solution?.attachments||[]).forEach(a=>push(a,'SOLUZIONE'));
+    (c.updates||[]).forEach(u=>(u.attachments||[]).forEach(a=>push(a,`RIUNIONE ${fmtDate(u.date)}`)));
+  }
+  return out;
+}
+function analyzeLegacyFolder(files){
+  legacySourceFiles=Array.from(files||[]);
+  const indexed=legacySourceFiles.map((file,i)=>({file,i,rel:file.webkitRelativePath||file.name,name:baseName(file.name)}));
+  const refs=collectLegacyAttachments();
+  legacyMatches=refs.map(ref=>{
+    const a=ref.attachment;
+    if(a.live||a.storageKey)return {...ref,status:'live',file:null,reason:'Già migrato'};
+    const wanted=baseName(a.legacyPath||a.name);
+    let candidates=indexed.filter(x=>x.name===wanted);
+    if(!candidates.length)return {...ref,status:'missing',file:null,reason:'File non trovato'};
+    if(candidates.length===1){
+      const x=candidates[0];
+      if(x.file.size>50*1024*1024)return {...ref,status:'missing',file:null,reason:'File oltre 50 MB'};
+      return {...ref,status:'ok',file:x.file,relativePath:x.rel,reason:'Nome file univoco'};
+    }
+    const ranked=candidates.map(x=>({...x,score:suffixScore(a.legacyPath,x.rel)})).sort((x,y)=>y.score-x.score);
+    if(ranked[0].score>ranked[1].score && ranked[0].score>=2){
+      const x=ranked[0];
+      if(x.file.size>50*1024*1024)return {...ref,status:'missing',file:null,reason:'File oltre 50 MB'};
+      return {...ref,status:'ok',file:x.file,relativePath:x.rel,reason:'Percorso storico compatibile'};
+    }
+    return {...ref,status:'ambiguous',file:null,reason:`${candidates.length} file con lo stesso nome`};
+  });
+  renderMigration();
+}
+function renderMigration(){
+  const refs=collectLegacyAttachments();
+  const pending=refs.filter(x=>!x.attachment.live&&!x.attachment.storageKey).length;
+  const selected=legacySourceFiles.length;
+  const ok=legacyMatches.filter(x=>x.status==='ok').length;
+  const ambiguous=legacyMatches.filter(x=>x.status==='ambiguous').length;
+  const missing=legacyMatches.filter(x=>x.status==='missing').length;
+  const live=refs.length-pending;
+  document.getElementById('app').innerHTML=`
+    <div class="page-head"><div><h1 class="page-title">Migrazione allegati storici</h1><div class="sub">Abbina i file dell’archivio ai riferimenti già presenti nel database, senza creare duplicati.</div></div></div>
+    <div class="card">
+      <h3 class="section-title">1. Seleziona la cartella archivio</h3>
+      <div class="muted">Seleziona la cartella principale <b>Immagini x Failure analisys</b>. I file non vengono caricati finché non premi “Migra corrispondenze certe”.</div>
+      <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <label class="btn btn-soft" for="legacyFolderInput">Seleziona cartella</label>
+        <input id="legacyFolderInput" type="file" webkitdirectory directory multiple style="display:none">
+        <span class="muted">${selected?`${selected} file letti dalla cartella`:'Nessuna cartella selezionata'}</span>
+      </div>
+    </div>
+    <div class="migration-summary">
+      <div class="migration-stat"><strong>${refs.length}</strong><span>Riferimenti storici totali</span></div>
+      <div class="migration-stat"><strong>${live}</strong><span>Già migrati</span></div>
+      <div class="migration-stat"><strong>${ok}</strong><span>Corrispondenze certe</span></div>
+      <div class="migration-stat"><strong>${ambiguous+missing}</strong><span>Da verificare / mancanti</span></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
+        <div><h3 class="section-title" style="margin-bottom:4px">2. Verifica abbinamenti</h3><div class="muted">${legacyMatches.length?`${ok} certi · ${ambiguous} ambigui · ${missing} mancanti`:'Seleziona prima la cartella per eseguire il confronto.'}</div></div>
+        <button class="btn btn-blue" id="migrateCertainBtn" ${ok?'':'disabled'}>Migra ${ok} corrispondenze certe</button>
+      </div>
+      <div id="migrationProgressWrap" style="display:none"><div class="migration-progress"><div id="migrationProgressBar"></div></div><div class="muted" id="migrationProgressText" style="margin-top:6px"></div></div>
+      <div class="migration-list">${legacyMatches.length?legacyMatches.map(m=>{
+        const cls=m.status==='ok'?'migration-ok':m.status==='ambiguous'?'migration-ambiguous':m.status==='live'?'migration-live':'migration-missing';
+        const label=m.status==='ok'?'PRONTO':m.status==='ambiguous'?'AMBIGUO':m.status==='live'?'GIÀ MIGRATO':'NON TROVATO';
+        return `<div class="migration-row"><div><b>Scheda ${esc(m.sheet)}</b><div class="muted" style="font-size:12px;margin-top:3px">${esc(m.where)} — ${esc(m.title||'')}</div></div><div><div class="legacy">${esc(m.attachment.legacyPath||m.attachment.name||'')}</div>${m.relativePath?`<div class="found" style="margin-top:4px">→ ${esc(m.relativePath)}</div>`:''}<div class="muted" style="font-size:11px;margin-top:3px">${esc(m.reason||'')}</div></div><div><span class="migration-badge ${cls}">${label}</span></div></div>`;
+      }).join(''):'<div class="empty">Ancora nessun confronto eseguito.</div>'}</div>
+    </div>`;
+  const input=document.getElementById('legacyFolderInput');
+  if(input)input.onchange=()=>analyzeLegacyFolder(input.files);
+  const btn=document.getElementById('migrateCertainBtn');
+  if(btn)btn.onclick=migrateCertainLegacyFiles;
+}
+async function migrateCertainLegacyFiles(){
+  const jobs=legacyMatches.filter(x=>x.status==='ok'&&x.file);
+  if(!jobs.length)return;
+  if(!confirm(`Migrare ${jobs.length} allegati storici nello storage? I riferimenti D1 esistenti verranno mantenuti e collegati ai file caricati.`))return;
+  const btn=document.getElementById('migrateCertainBtn'),wrap=document.getElementById('migrationProgressWrap'),bar=document.getElementById('migrationProgressBar'),text=document.getElementById('migrationProgressText');
+  if(btn)btn.disabled=true;if(wrap)wrap.style.display='block';
+  const affected=new Set();let done=0,errors=[];
+  for(const job of jobs){
+    try{
+      const fd=new FormData();fd.append('file',job.file,job.file.name);
+      await api('/api/attachments/'+encodeURIComponent(job.attachment.id)+'/migrate',{method:'POST',body:fd});
+      job.status='live';job.reason='Migrato correttamente';affected.add(job.caseId);
+    }catch(e){job.status='missing';job.reason='Errore: '+e.message;errors.push(`${job.attachment.name}: ${e.message}`)}
+    done++;const pct=Math.round(done/jobs.length*100);if(bar)bar.style.width=pct+'%';if(text)text.textContent=`${done}/${jobs.length} elaborati`;
+  }
+  for(const caseId of affected){try{await reloadCase(caseId)}catch{}}
+  analyzeLegacyFolder(legacySourceFiles);
+  if(errors.length)alert(`Migrazione completata con ${errors.length} errore/i. Gli allegati riusciti sono già disponibili.\n\n`+errors.slice(0,8).join('\n'));
+  else toast(`${done} allegati storici migrati`);
+}
+
 async function moveToTrash(id){if(!confirm('Spostare questo caso nel Cestino? Potrai ripristinarlo in seguito.'))return;try{await api('/api/cases/'+encodeURIComponent(id),{method:'DELETE'});const c=state.cases.find(x=>x.id===id);if(c)c.deletedAt=new Date().toISOString();state.agendaIds=state.agendaIds.filter(x=>x!==id);save();currentCaseId=null;setView('agenda');toast('Caso spostato nel Cestino')}catch(e){alert('Errore eliminazione caso: '+e.message)}}
 async function restoreCase(id){try{await api('/api/cases/'+encodeURIComponent(id)+'/restore',{method:'POST'});const c=state.cases.find(x=>x.id===id);if(c)c.deletedAt=null;save();renderTrash();toast('Caso ripristinato')}catch(e){alert('Errore ripristino: '+e.message)}}
 function renderTrash(){const a=trashedCases().sort((x,y)=>String(y.deletedAt||'').localeCompare(String(x.deletedAt||'')));document.getElementById('app').innerHTML=`<div class="page-head"><div><h1 class="page-title">Cestino</h1><div class="sub">Casi eliminati, ancora ripristinabili.</div></div></div><div class="table-card"><table class="table"><thead><tr><th>Scheda</th><th>ANOMALIA</th><th>Ente</th><th>Eliminato</th><th></th></tr></thead><tbody>${a.length?a.map(c=>`<tr><td><b>${esc(c.sheet)}</b></td><td>${esc(c.title)}</td><td>${esc(c.entity||'—')}</td><td>${c.deletedAt?new Date(c.deletedAt).toLocaleString('it-IT'):'—'}</td><td><button class="btn btn-soft btn-sm restore-case" data-id="${c.id}">Ripristina</button></td></tr>`).join(''):'<tr><td colspan="5" class="empty">Cestino vuoto</td></tr>'}</tbody></table></div>`;document.querySelectorAll('.restore-case').forEach(b=>b.onclick=()=>restoreCase(b.dataset.id))}
