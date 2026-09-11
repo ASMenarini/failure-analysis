@@ -391,6 +391,32 @@ background:#c9d7e4;
 .email-loading{padding:28px;text-align:center;color:var(--muted)}
 @media(max-width:700px){.email-meta{grid-template-columns:1fr;gap:4px}.email-meta b{margin-top:6px}}
 
+/* v15.3 — allegati interni MSG + navigazione schede sempre visibile */
+.case-navbar{
+  position:sticky;
+  top:84px;
+  z-index:45;
+  background:rgba(255,255,255,.96);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:8px 10px;
+  box-shadow:0 6px 18px rgba(15,23,42,.08);
+  backdrop-filter:blur(8px);
+}
+.email-attachments{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.email-attachment-card{border:1px solid var(--line);border-radius:10px;background:#fafbfd;overflow:hidden;min-width:0}
+.email-attachment-preview{height:118px;display:grid;place-items:center;background:#eef2f6;color:#475467;font-weight:900;letter-spacing:.5px;overflow:hidden}
+.email-attachment-preview img{width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in}
+.email-attachment-info{padding:10px}
+.email-attachment-name{font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#334155}
+.email-attachment-meta{font-size:11px;color:var(--muted);margin-top:3px}
+.email-attachment-tools{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.email-attachment-tools .btn{padding:6px 9px;font-size:11px}
+@media(max-width:700px){
+  .case-navbar{top:72px}
+  .email-attachments{grid-template-columns:1fr}
+}
+
 </style>
 </head>
 <body>
@@ -517,7 +543,32 @@ function emailDateText(data){
 function htmlToPlainText(html=''){
   try{const doc=new DOMParser().parseFromString(String(html),'text/html');return doc.body?.innerText||doc.body?.textContent||''}catch{return String(html||'')}
 }
-function renderParsedEmail(data,fileName='Messaggio e-mail'){
+function emailAttachmentExt(name=''){const m=String(name).toLowerCase().match(/\.([a-z0-9]+)$/);return m?m[1]:''}
+function emailAttachmentMime(name=''){
+  const e=emailAttachmentExt(name);
+  const map={jpg:'image/jpeg',jpeg:'image/jpeg',jfif:'image/jpeg',png:'image/png',gif:'image/gif',bmp:'image/bmp',webp:'image/webp',tif:'image/tiff',tiff:'image/tiff',pdf:'application/pdf',txt:'text/plain',csv:'text/csv',html:'text/html',htm:'text/html',xml:'text/xml',doc:'application/msword',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',xls:'application/vnd.ms-excel',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',ppt:'application/vnd.ms-powerpoint',pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation',msg:'application/vnd.ms-outlook',eml:'message/rfc822',zip:'application/zip'};
+  return map[e]||'application/octet-stream';
+}
+function formatBytes(n){n=Number(n)||0;if(!n)return '—';if(n<1024)return n+' B';if(n<1048576)return (n/1024).toFixed(n<10240?1:0)+' KB';return (n/1048576).toFixed(n<10485760?1:0)+' MB'}
+function extractMsgAttachments(reader,data){
+  const metas=Array.isArray(data?.attachments)?data.attachments:[];
+  return metas.map((meta,i)=>{
+    try{
+      const x=reader.getAttachment(meta);
+      const name=x?.fileName||meta?.fileName||meta?.fileNameShort||('Allegato '+(i+1));
+      const content=x?.content;
+      if(!content)return {index:i,name,mime:emailAttachmentMime(name),size:Number(meta?.contentLength)||0,error:'Contenuto non disponibile'};
+      const bytes=content instanceof Uint8Array?content:new Uint8Array(content);
+      const mime=emailAttachmentMime(name);
+      const blob=new Blob([bytes],{type:mime});
+      const url=URL.createObjectURL(blob);
+      return {index:i,name,mime,size:bytes.byteLength||Number(meta?.contentLength)||0,url,isImage:mime.startsWith('image/'),isPdf:mime==='application/pdf'};
+    }catch(e){
+      return {index:i,name:meta?.fileName||meta?.fileNameShort||('Allegato '+(i+1)),mime:'application/octet-stream',size:Number(meta?.contentLength)||0,error:e?.message||String(e)};
+    }
+  });
+}
+function renderParsedEmail(data,fileName='Messaggio e-mail',embedded=[]){
   const from=[data?.senderName,data?.senderEmail].filter(Boolean).join(data?.senderName&&data?.senderEmail?' <':'');
   const fromText=data?.senderName&&data?.senderEmail?from+'>':(from||'—');
   const to=emailRecipients(data,'to')||'—';
@@ -525,9 +576,20 @@ function renderParsedEmail(data,fileName='Messaggio e-mail'){
   const bcc=emailRecipients(data,'bcc')||'';
   const subject=data?.subject||fileName||'—';
   const body=(data?.body&&String(data.body).trim())?String(data.body):(htmlToPlainText(data?.bodyHtml||data?.htmlBody||data?.html||'').trim()||'Corpo del messaggio non disponibile in formato testo.');
-  const atts=Array.isArray(data?.attachments)?data.attachments:[];
-  const attHtml=atts.length?`<div class="email-attachments">${atts.map(a=>`<span class="email-attachment-chip">📎 ${esc(a.fileName||a.fileNameShort||'Allegato')}</span>`).join('')}</div>`:'<div class="muted">Nessun allegato interno.</div>';
-  return `<div class="email-viewer"><div class="email-meta"><b>Oggetto</b><div>${esc(subject)}</div><b>Da</b><div>${esc(fromText)}</div><b>A</b><div>${esc(to)}</div><b>Cc</b><div>${esc(cc)}</div>${bcc?`<b>Ccn</b><div>${esc(bcc)}</div>`:''}<b>Data</b><div>${esc(emailDateText(data))}</div></div><div><div class="section-title" style="margin-bottom:8px">Messaggio</div><div class="email-body">${esc(body)}</div></div><div><div class="section-title" style="margin-bottom:8px">Allegati nel messaggio</div>${attHtml}</div></div>`;
+  let attHtml='<div class="muted">Nessun allegato interno.</div>';
+  if(embedded.length){
+    attHtml=`<div class="email-attachments">${embedded.map((a,i)=>{
+      const ext=(emailAttachmentExt(a.name)||'FILE').toUpperCase();
+      const preview=a.url&&a.isImage?`<div class="email-attachment-preview"><img class="email-msg-image" data-url="${esc(a.url)}" data-name="${esc(a.name)}" src="${esc(a.url)}" alt="${esc(a.name)}"></div>`:`<div class="email-attachment-preview">${esc(ext)}</div>`;
+      const tools=a.url?`${(a.isImage||a.isPdf)?`<button class="btn btn-soft email-msg-open" type="button" data-url="${esc(a.url)}" data-name="${esc(a.name)}" data-image="${a.isImage?'1':'0'}">Apri</button>`:''}<a class="btn btn-ghost" href="${esc(a.url)}" download="${esc(a.name)}">Scarica</a>`:`<span class="muted">Non estraibile</span>`;
+      return `<div class="email-attachment-card">${preview}<div class="email-attachment-info"><div class="email-attachment-name" title="${esc(a.name)}">${esc(a.name)}</div><div class="email-attachment-meta">${esc(ext)} · ${esc(formatBytes(a.size))}${a.error?' · '+esc(a.error):''}</div><div class="email-attachment-tools">${tools}</div></div></div>`;
+    }).join('')}</div>`;
+  }
+  return `<div class="email-viewer"><div class="email-meta"><b>Oggetto</b><div>${esc(subject)}</div><b>Da</b><div>${esc(fromText)}</div><b>A</b><div>${esc(to)}</div><b>Cc</b><div>${esc(cc)}</div>${bcc?`<b>Ccn</b><div>${esc(bcc)}</div>`:''}<b>Data</b><div>${esc(emailDateText(data))}</div></div><div><div class="section-title" style="margin-bottom:8px">Messaggio</div><div class="email-body">${esc(body)}</div></div><div><div class="section-title" style="margin-bottom:8px">Allegati nel messaggio (${embedded.length})</div>${attHtml}</div></div>`;
+}
+function bindEmbeddedMsgAttachments(scope=document){
+  scope.querySelectorAll('.email-msg-image').forEach(img=>img.onclick=e=>{e.preventDefault();openLightbox([{id:'msg-att',name:img.dataset.name||'Allegato',dataUrl:img.dataset.url,type:'image/*',live:true}],'msg-att')});
+  scope.querySelectorAll('.email-msg-open').forEach(b=>b.onclick=e=>{e.preventDefault();const u=b.dataset.url;if(!u)return;if(b.dataset.image==='1'){openLightbox([{id:'msg-att',name:b.dataset.name||'Allegato',dataUrl:u,type:'image/*',live:true}],'msg-att')}else{const w=window.open(u,'_blank','noopener');if(!w)alert('Il browser ha bloccato la nuova scheda. Consenti i popup per questo sito.')}});
 }
 function unfoldHeaderLines(text){return String(text||'').replace(/\r?\n[ \t]+/g,' ')}
 function parseSimpleEml(text){
@@ -541,6 +603,7 @@ function parseSimpleEml(text){
 }
 async function openEmailInline(attId,name='Messaggio.msg'){
   const ui=openEmailViewerModal(name);
+  let embedded=[];
   try{
     const r=await fetch(attachmentOpenUrl(attId),{cache:'no-store'});
     if(!r.ok)throw new Error('Errore '+r.status);
@@ -554,9 +617,15 @@ async function openEmailInline(attId,name='Messaggio.msg'){
       const reader=new MsgReader(buf);
       data=reader.getFileData();
       if(!data||typeof data!=='object')throw new Error('Formato MSG non leggibile');
+      embedded=extractMsgAttachments(reader,data);
     }
-    if(ui.body)ui.body.innerHTML=renderParsedEmail(data,name);
+    if(ui.body){ui.body.innerHTML=renderParsedEmail(data,name,embedded);bindEmbeddedMsgAttachments(ui.body)}
+    const oldClose=ui.close;
+    ui.close=()=>{embedded.forEach(a=>{if(a.url)try{URL.revokeObjectURL(a.url)}catch{}});oldClose()};
+    const closeBtn=document.getElementById('emailViewerClose'),xBtn=document.getElementById('emailViewerX'),bd=document.getElementById('modalBackdrop');
+    if(closeBtn)closeBtn.onclick=ui.close;if(xBtn)xBtn.onclick=ui.close;if(bd)bd.onclick=e=>{if(e.target===bd)ui.close()};
   }catch(e){
+    embedded.forEach(a=>{if(a.url)try{URL.revokeObjectURL(a.url)}catch{}});
     if(ui.body)ui.body.innerHTML=`<div class="card danger-zone"><h3 class="section-title">Impossibile visualizzare il messaggio</h3><div>${esc(e.message||String(e))}</div><div class="muted" style="margin-top:8px">Il file originale resta disponibile con il pulsante Scarica.</div></div>`;
   }
 }
