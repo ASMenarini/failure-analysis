@@ -628,18 +628,61 @@ document.querySelectorAll('.delete-meeting').forEach(b=>b.onclick=()=>deleteMeet
 let legacySourceFiles=[];
 let legacyMatches=[];
 
+function decodeLegacyText(v=''){
+  let s=String(v??'').normalize('NFKC').trim();
+  try{s=decodeURIComponent(s)}catch{}
+  return s;
+}
 function normalizeLegacyPath(v=''){
-  return String(v).normalize('NFKC').replace(/\\/g,'/').replace(/\/+/g,'/').trim().toLowerCase();
+  return decodeLegacyText(v)
+    .replace(/\\/g,'/')
+    .replace(/\/+/g,'/')
+    .replace(/^file:\/\//i,'')
+    .replace(/^#+|#+$/g,'')
+    .trim()
+    .toLowerCase();
+}
+function cleanFileName(v=''){
+  return decodeLegacyText(v)
+    .replace(/^#+|#+$/g,'')
+    .replace(/[?#].*$/,'')
+    .trim()
+    .toLowerCase();
 }
 function baseName(v=''){
   const p=normalizeLegacyPath(v).split('/');
-  return (p[p.length-1]||'').trim();
+  return cleanFileName(p[p.length-1]||'');
+}
+function legacyPathVariants(v=''){
+  const raw=decodeLegacyText(v);
+  const parts=raw.split('#').map(x=>x.trim()).filter(Boolean);
+  const source=parts.length?parts:[raw];
+  const out=[];
+  for(const part of source){
+    const norm=normalizeLegacyPath(part);
+    if(norm&&!out.includes(norm))out.push(norm);
+  }
+  return out;
+}
+function legacyFileNames(v=''){
+  const out=[];
+  for(const part of legacyPathVariants(v)){
+    const n=baseName(part);
+    if(n&&!out.includes(n))out.push(n);
+  }
+  const direct=baseName(v);
+  if(direct&&!out.includes(direct))out.push(direct);
+  return out;
 }
 function suffixScore(a,b){
   const aa=normalizeLegacyPath(a).split('/').filter(Boolean),bb=normalizeLegacyPath(b).split('/').filter(Boolean);
   let i=aa.length-1,j=bb.length-1,n=0;
   while(i>=0&&j>=0&&aa[i]===bb[j]){n++;i--;j--}
   return n;
+}
+function bestLegacySuffixScore(legacyPath,relativePath){
+  const variants=legacyPathVariants(legacyPath);
+  return variants.reduce((best,v)=>Math.max(best,suffixScore(v,relativePath)),0);
 }
 function collectLegacyAttachments(){
   const out=[];
@@ -653,20 +696,31 @@ function collectLegacyAttachments(){
 }
 function analyzeLegacyFolder(files){
   legacySourceFiles=Array.from(files||[]);
-  const indexed=legacySourceFiles.map((file,i)=>({file,i,rel:file.webkitRelativePath||file.name,name:baseName(file.name)}));
+  const indexed=legacySourceFiles.map((file,i)=>({
+    file,i,
+    rel:file.webkitRelativePath||file.name,
+    name:cleanFileName(file.name),
+    relNorm:normalizeLegacyPath(file.webkitRelativePath||file.name)
+  }));
   const refs=collectLegacyAttachments();
   legacyMatches=refs.map(ref=>{
     const a=ref.attachment;
     if(a.live||a.storageKey)return {...ref,status:'live',file:null,reason:'Già migrato'};
-    const wanted=baseName(a.legacyPath||a.name);
-    let candidates=indexed.filter(x=>x.name===wanted);
-    if(!candidates.length)return {...ref,status:'missing',file:null,reason:'File non trovato'};
+
+    const names=legacyFileNames(a.legacyPath||a.name);
+    let candidates=indexed.filter(x=>names.includes(x.name));
+    if(!candidates.length){
+      return {...ref,status:'missing',file:null,reason:`File non trovato${names.length?' · cercato: '+names.join(' / '):''}`};
+    }
     if(candidates.length===1){
       const x=candidates[0];
       if(x.file.size>50*1024*1024)return {...ref,status:'missing',file:null,reason:'File oltre 50 MB'};
-      return {...ref,status:'ok',file:x.file,relativePath:x.rel,reason:'Nome file univoco'};
+      return {...ref,status:'ok',file:x.file,relativePath:x.rel,reason:'Nome file univoco (formato Access normalizzato)'};
     }
-    const ranked=candidates.map(x=>({...x,score:suffixScore(a.legacyPath,x.rel)})).sort((x,y)=>y.score-x.score);
+
+    const ranked=candidates
+      .map(x=>({...x,score:bestLegacySuffixScore(a.legacyPath,x.rel)}))
+      .sort((x,y)=>y.score-x.score||x.rel.localeCompare(y.rel));
     if(ranked[0].score>ranked[1].score && ranked[0].score>=2){
       const x=ranked[0];
       if(x.file.size>50*1024*1024)return {...ref,status:'missing',file:null,reason:'File oltre 50 MB'};
@@ -684,6 +738,8 @@ function renderMigration(){
   const ambiguous=legacyMatches.filter(x=>x.status==='ambiguous').length;
   const missing=legacyMatches.filter(x=>x.status==='missing').length;
   const live=refs.length-pending;
+  const usedFiles=new Set(legacyMatches.filter(x=>x.file).map(x=>x.file));
+  const unusedLocal=legacySourceFiles.filter(f=>!usedFiles.has(f));
   document.getElementById('app').innerHTML=`
     <div class="page-head"><div><h1 class="page-title">Migrazione allegati storici</h1><div class="sub">Abbina i file dell’archivio ai riferimenti già presenti nel database, senza creare duplicati.</div></div></div>
     <div class="card">
@@ -700,6 +756,7 @@ function renderMigration(){
       <div class="migration-stat"><strong>${live}</strong><span>Già migrati</span></div>
       <div class="migration-stat"><strong>${ok}</strong><span>Corrispondenze certe</span></div>
       <div class="migration-stat"><strong>${ambiguous+missing}</strong><span>Da verificare / mancanti</span></div>
+      <div class="migration-stat"><strong>${unusedLocal.length}</strong><span>File locali non abbinati</span></div>
     </div>
     <div class="card">
       <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
@@ -712,7 +769,8 @@ function renderMigration(){
         const label=m.status==='ok'?'PRONTO':m.status==='ambiguous'?'AMBIGUO':m.status==='live'?'GIÀ MIGRATO':'NON TROVATO';
         return `<div class="migration-row"><div><b>Scheda ${esc(m.sheet)}</b><div class="muted" style="font-size:12px;margin-top:3px">${esc(m.where)} — ${esc(m.title||'')}</div></div><div><div class="legacy">${esc(m.attachment.legacyPath||m.attachment.name||'')}</div>${m.relativePath?`<div class="found" style="margin-top:4px">→ ${esc(m.relativePath)}</div>`:''}<div class="muted" style="font-size:11px;margin-top:3px">${esc(m.reason||'')}</div></div><div><span class="migration-badge ${cls}">${label}</span></div></div>`;
       }).join(''):'<div class="empty">Ancora nessun confronto eseguito.</div>'}</div>
-    </div>`;
+    </div>
+    ${selected?`<div class="card" style="margin-top:14px"><h3 class="section-title">3. File locali non abbinati (${unusedLocal.length})</h3><div class="muted" style="margin-bottom:10px">Questi file sono presenti nella cartella selezionata ma non risultano usati da alcuna corrispondenza certa.</div>${unusedLocal.length?`<div class="migration-list">${unusedLocal.map(f=>`<div class="migration-row" style="grid-template-columns:1fr auto"><div><b>${esc(f.name)}</b><div class="legacy">${esc(f.webkitRelativePath||f.name)}</div></div><div><span class="migration-badge migration-ambiguous">NON ABBINATO</span></div></div>`).join('')}</div>`:'<div class="muted">Tutti i file locali selezionati risultano abbinati.</div>'}</div>`:''}`;
   const input=document.getElementById('legacyFolderInput');
   if(input)input.onchange=()=>analyzeLegacyFolder(input.files);
   const btn=document.getElementById('migrateCertainBtn');
