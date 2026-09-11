@@ -567,10 +567,12 @@ const media=img
 :`<div class="doc-preview"><div class="doc-ext">${esc(attachmentExtension(a))}</div><div class="doc-kind">${esc(attachmentKindLabel(a))}</div></div>`;
 const pdf=isPdfAttachment(a);
 const office=isOfficePreviewable(a);
+const email=['MSG','EML'].includes(attachmentExtension(a));
 const tools=img
 ?`<button class="btn btn-soft btn-sm open-image-inline" data-image-src="${esc(a.dataUrl)}" data-image-name="${esc(a.name)}" data-image-id="${esc(a.id)}" type="button">Apri / Zoom</button>`
 :pdf?`<button class="btn btn-soft btn-sm open-pdf-inline" data-att="${esc(a.id)}" data-name="${esc(a.name)}" type="button">Apri</button>`
-:office?`<a class="btn btn-soft btn-sm open-office-inline" href="${esc(officeViewerUrl(a))}" target="_blank" rel="noopener noreferrer">Apri</a>`:'';
+:office?`<a class="btn btn-soft btn-sm open-office-inline" href="${esc(officeViewerUrl(a))}" target="_blank" rel="noopener noreferrer">Apri</a>`
+:email?`<a class="btn btn-soft btn-sm open-email-inline" href="${esc(attachmentOpenUrl(a.id))}" target="_blank" rel="noopener noreferrer">Apri</a>`:'';
 return `<div class="attachment ${img?'image-attachment':'document-attachment'}">${media}<div class="attachment-body"><div class="attachment-name" title="${esc(a.name)}">${esc(a.name)}</div><div class="attachment-tools">${tools}<a class="btn btn-ghost btn-sm" href="${attachmentDownloadUrl(a.id)}">Scarica</a><button class="btn btn-danger btn-sm delete-attachment" data-case="${caseId}" data-kind="${kind}" data-att="${a.id}">Elimina</button></div></div></div>`
 }).join('')}</div>`:'';
 return legacyHtml+externalHtml+onlineHtml;
