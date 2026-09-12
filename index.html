@@ -600,7 +600,7 @@ state.meetings.push(snap);save();toast('Snapshot agenda salvato in Riunioni');
 async function imgSize(data){return new Promise(res=>{const im=new Image();im.onload=()=>res({w:im.naturalWidth,h:im.naturalHeight});im.onerror=()=>res({w:1,h:1});im.src=data})}
 async function addContain(slide,data,x,y,w,h){const d=await imgSize(data);const r=Math.min(w/d.w,h/d.h),iw=d.w*r,ih=d.h*r;slide.addImage({data,x:x+(w-iw)/2,y:y+(h-ih)/2,w:iw,h:ih})}
 function pptText(s){return String(s||'').replace(/\s+/g,' ').trim()}
-function allCaseImagesForPpt(c){
+function allCaseImages(c){
 const imgs=[];
 const push=(a,section,label,date)=>{
 if(a&&a.dataUrl&&String(a.type||'').startsWith('image/')) imgs.push({dataUrl:a.dataUrl,name:a.name||'',section,label:label||'',date:date||''});
@@ -626,7 +626,7 @@ let page=2;
 
 for(let idx=0;idx<cases.length;idx++){
 const c=cases[idx];
-const imgs=allCaseImagesForPpt(c);
+const imgs=allCaseImages(c);
 
 // MAIN CASE SLIDE
 slide=pptx.addSlide();slide.addImage({data:MENARINI_CONTENT,x:0,y:0,w:13.333,h:7.5});
