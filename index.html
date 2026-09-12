@@ -394,6 +394,56 @@ background:#c9d7e4;
 .legacy-missing{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:10px;background:#fafbfd}.legacy-badge{font-size:20px}.legacy-text{min-width:0;flex:1;color:var(--muted);font-size:12px}.legacy-name{font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.legacy-actions{flex:0 0 auto}
 @media(max-width:700px){.doc-preview{height:120px}}
 
+
+/* v15.2 — visualizzatore interno MSG/EML */
+.email-viewer{display:grid;gap:14px}
+.email-meta{display:grid;grid-template-columns:130px 1fr;gap:8px 14px;background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:14px}
+.email-meta b{font-size:12px;color:#667788;text-transform:uppercase;letter-spacing:.3px}
+.email-body{white-space:pre-wrap;line-height:1.55;background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;min-height:140px;max-height:52vh;overflow:auto}
+.email-attachments{display:flex;flex-wrap:wrap;gap:7px}
+.email-attachment-chip{display:inline-flex;align-items:center;gap:6px;background:#eef4f8;border:1px solid #dce6ee;border-radius:16px;padding:6px 9px;font-size:12px;font-weight:700;color:#405466}
+.email-loading{padding:28px;text-align:center;color:var(--muted)}
+@media(max-width:700px){.email-meta{grid-template-columns:1fr;gap:4px}.email-meta b{margin-top:6px}}
+
+/* v15.3 — allegati interni MSG + navigazione schede sempre visibile */
+.case-navbar{
+  position:sticky;
+  top:84px;
+  z-index:45;
+  background:rgba(255,255,255,.96);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:8px 10px;
+  box-shadow:0 6px 18px rgba(15,23,42,.08);
+  backdrop-filter:blur(8px);
+}
+.email-attachments{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.email-attachment-card{border:1px solid var(--line);border-radius:10px;background:#fafbfd;overflow:hidden;min-width:0}
+.email-attachment-preview{height:118px;display:grid;place-items:center;background:#eef2f6;color:#475467;font-weight:900;letter-spacing:.5px;overflow:hidden}
+.email-attachment-preview img{width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in}
+.email-attachment-info{padding:10px}
+.email-attachment-name{font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#334155}
+.email-attachment-meta{font-size:11px;color:var(--muted);margin-top:3px}
+.email-attachment-tools{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.email-attachment-tools .btn{padding:6px 9px;font-size:11px}
+@media(max-width:700px){
+  .case-navbar{top:72px}
+  .email-attachments{grid-template-columns:1fr}
+}
+
+
+
+/* v16.4.1 — barra azioni scheda più compatta su desktop; nessun'altra modifica */
+@media(min-width:901px){
+  .case-actionbar{
+    width:690px;
+    max-width:690px;
+    flex:0 0 690px;
+    align-content:flex-start;
+  }
+  .page-head > div:first-child{min-width:0;flex:1 1 auto}
+}
+
 </style>
 </head>
 <body>
@@ -482,6 +532,126 @@ return c.solution;
 }
 
 function isImageAttachment(a){return !!(a&&a.dataUrl&&((a.type||'').toLowerCase().startsWith('image/')||/\.(jpe?g|jfif|png|bmp|gif|webp|tiff?)$/i.test(a.name||'')))}
+let __msgReaderModulePromise=null;
+function loadMsgReaderModule(){
+  if(!__msgReaderModulePromise){
+    __msgReaderModulePromise=import('https://cdn.jsdelivr.net/npm/@kenjiuno/msgreader-web-ng@0.2.0-alpha1/+esm').then(m=>{
+      const Ctor=m.MsgReader||m.default;
+      if(typeof Ctor!=='function') throw new Error('Libreria MSG non disponibile');
+      return Ctor;
+    });
+  }
+  return __msgReaderModulePromise;
+}
+function openEmailViewerModal(title){
+  const bd=document.getElementById('modalBackdrop');
+  bd.innerHTML=`<div class="modal" role="dialog" aria-modal="true"><div class="modal-head"><h2>${esc(title||'Messaggio e-mail')}</h2><button class="x" id="emailViewerX">×</button></div><div class="modal-body" id="emailViewerBody"><div class="email-loading">Apertura messaggio…</div></div><div class="modal-foot"><button class="btn btn-blue" id="emailViewerClose">Chiudi</button></div></div>`;
+  bd.classList.add('show');
+  const close=()=>{bd.classList.remove('show');bd.innerHTML=''};
+  document.getElementById('emailViewerClose').onclick=close;
+  document.getElementById('emailViewerX').onclick=close;
+  bd.onclick=e=>{if(e.target===bd)close()};
+  return {close,body:document.getElementById('emailViewerBody')};
+}
+function emailRecipients(data,type){
+  const rows=Array.isArray(data?.recipients)?data.recipients:[];
+  return rows.filter(r=>String(r.recipType||'to').toLowerCase()===type).map(r=>r.name||r.email||'').filter(Boolean).join('; ');
+}
+function emailDateText(data){
+  const raw=data?.messageDeliveryTime||data?.clientSubmitTime||data?.creationTime||'';
+  if(!raw)return '—';
+  const d=new Date(raw);return isNaN(d)?String(raw):d.toLocaleString('it-IT');
+}
+function htmlToPlainText(html=''){
+  try{const doc=new DOMParser().parseFromString(String(html),'text/html');return doc.body?.innerText||doc.body?.textContent||''}catch{return String(html||'')}
+}
+function emailAttachmentExt(name=''){const m=String(name).toLowerCase().match(/\.([a-z0-9]+)$/);return m?m[1]:''}
+function emailAttachmentMime(name=''){
+  const e=emailAttachmentExt(name);
+  const map={jpg:'image/jpeg',jpeg:'image/jpeg',jfif:'image/jpeg',png:'image/png',gif:'image/gif',bmp:'image/bmp',webp:'image/webp',tif:'image/tiff',tiff:'image/tiff',pdf:'application/pdf',txt:'text/plain',csv:'text/csv',html:'text/html',htm:'text/html',xml:'text/xml',doc:'application/msword',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',xls:'application/vnd.ms-excel',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',ppt:'application/vnd.ms-powerpoint',pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation',msg:'application/vnd.ms-outlook',eml:'message/rfc822',zip:'application/zip'};
+  return map[e]||'application/octet-stream';
+}
+function formatBytes(n){n=Number(n)||0;if(!n)return '—';if(n<1024)return n+' B';if(n<1048576)return (n/1024).toFixed(n<10240?1:0)+' KB';return (n/1048576).toFixed(n<10485760?1:0)+' MB'}
+function extractMsgAttachments(reader,data){
+  const metas=Array.isArray(data?.attachments)?data.attachments:[];
+  return metas.map((meta,i)=>{
+    try{
+      const x=reader.getAttachment(meta);
+      const name=x?.fileName||meta?.fileName||meta?.fileNameShort||('Allegato '+(i+1));
+      const content=x?.content;
+      if(!content)return {index:i,name,mime:emailAttachmentMime(name),size:Number(meta?.contentLength)||0,error:'Contenuto non disponibile'};
+      const bytes=content instanceof Uint8Array?content:new Uint8Array(content);
+      const mime=emailAttachmentMime(name);
+      const blob=new Blob([bytes],{type:mime});
+      const url=URL.createObjectURL(blob);
+      return {index:i,name,mime,size:bytes.byteLength||Number(meta?.contentLength)||0,url,isImage:mime.startsWith('image/'),isPdf:mime==='application/pdf'};
+    }catch(e){
+      return {index:i,name:meta?.fileName||meta?.fileNameShort||('Allegato '+(i+1)),mime:'application/octet-stream',size:Number(meta?.contentLength)||0,error:e?.message||String(e)};
+    }
+  });
+}
+function renderParsedEmail(data,fileName='Messaggio e-mail',embedded=[]){
+  const from=[data?.senderName,data?.senderEmail].filter(Boolean).join(data?.senderName&&data?.senderEmail?' <':'');
+  const fromText=data?.senderName&&data?.senderEmail?from+'>':(from||'—');
+  const to=emailRecipients(data,'to')||'—';
+  const cc=emailRecipients(data,'cc')||'—';
+  const bcc=emailRecipients(data,'bcc')||'';
+  const subject=data?.subject||fileName||'—';
+  const body=(data?.body&&String(data.body).trim())?String(data.body):(htmlToPlainText(data?.bodyHtml||data?.htmlBody||data?.html||'').trim()||'Corpo del messaggio non disponibile in formato testo.');
+  let attHtml='<div class="muted">Nessun allegato interno.</div>';
+  if(embedded.length){
+    attHtml=`<div class="email-attachments">${embedded.map((a,i)=>{
+      const ext=(emailAttachmentExt(a.name)||'FILE').toUpperCase();
+      const preview=a.url&&a.isImage?`<div class="email-attachment-preview"><img class="email-msg-image" data-url="${esc(a.url)}" data-name="${esc(a.name)}" src="${esc(a.url)}" alt="${esc(a.name)}"></div>`:`<div class="email-attachment-preview">${esc(ext)}</div>`;
+      const tools=a.url?`${(a.isImage||a.isPdf)?`<button class="btn btn-soft email-msg-open" type="button" data-url="${esc(a.url)}" data-name="${esc(a.name)}" data-image="${a.isImage?'1':'0'}">Apri</button>`:''}<a class="btn btn-ghost" href="${esc(a.url)}" download="${esc(a.name)}">Scarica</a>`:`<span class="muted">Non estraibile</span>`;
+      return `<div class="email-attachment-card">${preview}<div class="email-attachment-info"><div class="email-attachment-name" title="${esc(a.name)}">${esc(a.name)}</div><div class="email-attachment-meta">${esc(ext)} · ${esc(formatBytes(a.size))}${a.error?' · '+esc(a.error):''}</div><div class="email-attachment-tools">${tools}</div></div></div>`;
+    }).join('')}</div>`;
+  }
+  return `<div class="email-viewer"><div class="email-meta"><b>Oggetto</b><div>${esc(subject)}</div><b>Da</b><div>${esc(fromText)}</div><b>A</b><div>${esc(to)}</div><b>Cc</b><div>${esc(cc)}</div>${bcc?`<b>Ccn</b><div>${esc(bcc)}</div>`:''}<b>Data</b><div>${esc(emailDateText(data))}</div></div><div><div class="section-title" style="margin-bottom:8px">Messaggio</div><div class="email-body">${esc(body)}</div></div><div><div class="section-title" style="margin-bottom:8px">Allegati nel messaggio (${embedded.length})</div>${attHtml}</div></div>`;
+}
+function bindEmbeddedMsgAttachments(scope=document){
+  scope.querySelectorAll('.email-msg-image').forEach(img=>img.onclick=e=>{e.preventDefault();openLightbox([{id:'msg-att',name:img.dataset.name||'Allegato',dataUrl:img.dataset.url,type:'image/*',live:true}],'msg-att')});
+  scope.querySelectorAll('.email-msg-open').forEach(b=>b.onclick=e=>{e.preventDefault();const u=b.dataset.url;if(!u)return;if(b.dataset.image==='1'){openLightbox([{id:'msg-att',name:b.dataset.name||'Allegato',dataUrl:u,type:'image/*',live:true}],'msg-att')}else{const w=window.open(u,'_blank','noopener');if(!w)alert('Il browser ha bloccato la nuova scheda. Consenti i popup per questo sito.')}});
+}
+function unfoldHeaderLines(text){return String(text||'').replace(/\r?\n[ \t]+/g,' ')}
+function parseSimpleEml(text){
+  const normalized=String(text||'').replace(/\r\n/g,'\n');
+  const cut=normalized.indexOf('\n\n');
+  const head=unfoldHeaderLines(cut>=0?normalized.slice(0,cut):normalized);
+  const body=cut>=0?normalized.slice(cut+2):'';
+  const get=n=>{const m=head.match(new RegExp('^'+n+':\\s*(.*)$','mi'));return m?m[1].trim():''};
+  const splitPeople=v=>v?v.split(',').map(x=>({name:x.trim(),recipType:'to'})):[];
+  return {subject:get('Subject'),senderName:get('From'),recipients:splitPeople(get('To')),body,messageDeliveryTime:get('Date'),attachments:[]};
+}
+async function openEmailInline(attId,name='Messaggio.msg'){
+  const ui=openEmailViewerModal(name);
+  let embedded=[];
+  try{
+    const r=await fetch(attachmentOpenUrl(attId),{cache:'no-store'});
+    if(!r.ok)throw new Error('Errore '+r.status);
+    const ext=String(name).split('.').pop().toLowerCase();
+    let data;
+    if(ext==='eml'){
+      data=parseSimpleEml(await r.text());
+    }else{
+      const buf=await r.arrayBuffer();
+      const MsgReader=await loadMsgReaderModule();
+      const reader=new MsgReader(buf);
+      data=reader.getFileData();
+      if(!data||typeof data!=='object')throw new Error('Formato MSG non leggibile');
+      embedded=extractMsgAttachments(reader,data);
+    }
+    if(ui.body){ui.body.innerHTML=renderParsedEmail(data,name,embedded);bindEmbeddedMsgAttachments(ui.body)}
+    const oldClose=ui.close;
+    ui.close=()=>{embedded.forEach(a=>{if(a.url)try{URL.revokeObjectURL(a.url)}catch{}});oldClose()};
+    const closeBtn=document.getElementById('emailViewerClose'),xBtn=document.getElementById('emailViewerX'),bd=document.getElementById('modalBackdrop');
+    if(closeBtn)closeBtn.onclick=ui.close;if(xBtn)xBtn.onclick=ui.close;if(bd)bd.onclick=e=>{if(e.target===bd)ui.close()};
+  }catch(e){
+    embedded.forEach(a=>{if(a.url)try{URL.revokeObjectURL(a.url)}catch{}});
+    if(ui.body)ui.body.innerHTML=`<div class="card danger-zone"><h3 class="section-title">Impossibile visualizzare il messaggio</h3><div>${esc(e.message||String(e))}</div><div class="muted" style="margin-top:8px">Il file originale resta disponibile con il pulsante Scarica.</div></div>`;
+  }
+}
+
 function attachmentExtension(a){const n=String(a?.name||'').trim();const m=n.match(/\.([a-z0-9]{1,8})$/i);return m?m[1].toUpperCase():'FILE'}
 function attachmentKindLabel(a){const ext=attachmentExtension(a);if(ext==='PDF')return 'Documento PDF';if(['PPT','PPTX'].includes(ext))return 'Presentazione';if(['DOC','DOCX','ODT','RTF'].includes(ext))return 'Documento';if(['XLS','XLSX','CSV','ODS'].includes(ext))return 'Foglio di calcolo';if(['MSG','EML'].includes(ext))return 'Messaggio e-mail';if(['ZIP','RAR','7Z'].includes(ext))return 'Archivio';return 'Allegato'}
 function externalTargetType(value){const x=String(value||'').trim();if(/^https?:\/\//i.test(x))return 'web';if(/^file:\/\//i.test(x))return 'network';if(/^[A-Za-z]:[\\/]/.test(x))return 'network';if(/^\\\\[^\\]+\\[^\\]+/.test(x))return 'network';return 'invalid'}
@@ -497,7 +667,7 @@ function networkFileUri(value){let x=String(value||'').trim();if(/^file:\/\//i.t
 function openNetworkFile(value){const fileUri=networkFileUri(value);if(!fileUri){alert('Percorso di rete non valido.');return}const a=document.createElement('a');a.href=encodeURI(fileUri).replace(/#/g,'%23');a.target='_blank';a.rel='noopener';a.style.display='none';document.body.appendChild(a);a.click();setTimeout(()=>a.remove(),0)}
 function renderLegacyMissing(a,caseId,kind){return `<div class="legacy-missing" title="${esc(a.legacyPath||a.name||'')}"><span class="legacy-badge">↗</span><div class="legacy-text"><div class="legacy-name">${esc(a.name||'Collegamento storico')}</div><div>File storico non migrato · non disponibile online</div></div><div class="legacy-actions"><button class="btn btn-danger btn-sm delete-attachment" data-case="${esc(caseId)}" data-kind="${esc(kind)}" data-att="${esc(a.id)}" type="button">Rimuovi</button></div></div>`}
 function attachmentFileKind(a){const n=String(a?.name||'').toLowerCase(),t=String(a?.type||'').toLowerCase();if(isImageAttachment(a))return 'IMMAGINE';if(t==='application/pdf'||/\.pdf$/i.test(n))return 'PDF';if(/\.msg$/i.test(n)||t==='application/vnd.ms-outlook')return 'MSG';if(/\.pptx?$/i.test(n)||t.includes('presentation'))return /\.ppt$/i.test(n)?'PPT':'PPTX';if(/\.xlsx?$/i.test(n)||t.includes('spreadsheet')||t.includes('excel'))return /\.xls$/i.test(n)?'XLS':'XLSX';if(/\.docx?$/i.test(n)||t.includes('wordprocessing')||t.includes('msword'))return /\.doc$/i.test(n)?'DOC':'DOCX';return (n.split('.').pop()||'FILE').toUpperCase()}
-function attachmentSummaryAction(a){const kind=attachmentFileKind(a);if(a?.external){if(externalTargetType(a.externalUrl)==='network')return `<button class="btn btn-soft btn-sm summary-open-network" data-path="${esc(a.externalUrl)}" type="button">Apri collegamento</button>`;return `<a class="btn btn-soft btn-sm" href="${esc(a.externalUrl)}" target="_blank" rel="noopener noreferrer">Apri collegamento</a>`}if(!a?.live)return '<span class="muted">Non disponibile online</span>';if(kind==='IMMAGINE')return `<button class="btn btn-soft btn-sm summary-open-image" data-id="${esc(a.id)}" type="button">Apri / Zoom</button>`;if(kind==='PDF')return `<a class="btn btn-soft btn-sm" href="${attachmentOpenUrl(a.id)}" target="_blank" rel="noopener">Apri PDF</a>`;if(['MSG','PPT','PPTX','XLS','XLSX','DOC','DOCX'].includes(kind))return `<a class="btn btn-soft btn-sm" href="${attachmentOpenUrl(a.id)}" target="_blank" rel="noopener">Scarica / Apri</a>`;return `<a class="btn btn-soft btn-sm" href="${attachmentOpenUrl(a.id)}" target="_blank" rel="noopener">Apri file</a>`}
+function attachmentSummaryAction(a){const kind=attachmentFileKind(a);if(a?.external){if(externalTargetType(a.externalUrl)==='network')return `<button class="btn btn-soft btn-sm summary-open-network" data-path="${esc(a.externalUrl)}" type="button">Apri collegamento</button>`;return `<a class="btn btn-soft btn-sm" href="${esc(a.externalUrl)}" target="_blank" rel="noopener noreferrer">Apri collegamento</a>`}if(!a?.live)return '<span class="muted">Non disponibile online</span>';if(kind==='IMMAGINE')return `<button class="btn btn-soft btn-sm summary-open-image" data-id="${esc(a.id)}" type="button">Apri / Zoom</button>`;if(kind==='PDF')return `<a class="btn btn-soft btn-sm" href="${attachmentOpenUrl(a.id)}" target="_blank" rel="noopener">Apri PDF</a>`;if(kind==='MSG')return `<button class="btn btn-soft btn-sm summary-open-email" data-att="${esc(a.id)}" data-name="${esc(a.name)}" type="button">Apri MSG</button>`;if(['PPT','PPTX','XLS','XLSX','DOC','DOCX'].includes(kind))return `<a class="btn btn-soft btn-sm" href="${attachmentOpenUrl(a.id)}" target="_blank" rel="noopener">Scarica / Apri</a>`;return `<a class="btn btn-soft btn-sm" href="${attachmentOpenUrl(a.id)}" target="_blank" rel="noopener">Apri file</a>`}
 function allCaseImages(c){const out=[];const add=(arr,source)=>{(arr||[]).forEach(a=>{if(isImageAttachment(a))out.push({...a,source})})};add(c.attachments,'ANOMALIA');add(c.solution?.attachments,'SOLUZIONE');(c.updates||[]).forEach(u=>add(u.attachments,`RIUNIONE ${fmtDate(u.date)}`));return out}
 function coverAttachment(c){const imgs=allCaseImages(c);return imgs.find(a=>a.id===c.coverAttachmentId)||imgs[0]||null}
 function renderCaseThumb(c){const a=coverAttachment(c);return a?`<img class="case-thumb js-lightbox-thumb hover-preview-source" data-case-id="${c.id}" data-image-id="${a.id}" data-preview-src="${a.dataUrl}" src="${a.dataUrl}" alt="Copertina ${esc(c.sheet)}" title="Ingrandisci copertina">`:`<div class="case-thumb-placeholder">NESSUNA<br>IMMAGINE</div>`}
@@ -545,7 +715,7 @@ if(isAgenda){document.getElementById('snapshotAgendaBtn').onclick=createAgendaSn
 }
 
 function caseAttachmentSummary(c){const rows=[];const push=(a,section,date,note)=>rows.push({a,section,date:date||'',note:note||''});(c.attachments||[]).forEach(a=>push(a,'ANOMALIA',c.date,''));(c.updates||[]).forEach(u=>(u.attachments||[]).forEach(a=>push(a,'RIUNIONE',u.date,u.text||'')));(c.solution?.attachments||[]).forEach(a=>push(a,'SOLUZIONE','',c.solution?.text||''));return rows.sort((x,y)=>String(y.date||'').localeCompare(String(x.date||'')))}
-function openAttachmentSummary(c){const rows=caseAttachmentSummary(c);const body=rows.length?`<div class="snapshot-frame"><table class="attachment-summary-table"><thead><tr><th>Data nota</th><th>Sezione</th><th>Titolo allegato</th><th>Tipo</th><th>Azione</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${fmtDate(r.date)}</td><td>${esc(r.section)}</td><td><div class="attachment-summary-name">${esc(r.a.name||'Allegato')}</div>${r.note?`<div class="muted" style="font-size:11px;margin-top:3px">${esc(r.note).slice(0,140)}${String(r.note).length>140?'…':''}</div>`:''}</td><td><span class="attachment-type-badge">${esc(attachmentFileKind(r.a))}</span></td><td><div class="attachment-summary-actions">${attachmentSummaryAction(r.a)}</div></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Nessun allegato presente nel caso.</div>';const ctl=openModal('Riepilogo allegati',body,close=>close(),'Chiudi');const imgs=allCaseImages(c);document.querySelectorAll('.summary-open-image').forEach(b=>b.onclick=()=>openLightbox(imgs,b.dataset.id));document.querySelectorAll('.summary-open-network').forEach(b=>b.onclick=()=>openNetworkFile(b.dataset.path||''));return ctl}
+function openAttachmentSummary(c){const rows=caseAttachmentSummary(c);const body=rows.length?`<div class="snapshot-frame"><table class="attachment-summary-table"><thead><tr><th>Data nota</th><th>Sezione</th><th>Titolo allegato</th><th>Tipo</th><th>Azione</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${fmtDate(r.date)}</td><td>${esc(r.section)}</td><td><div class="attachment-summary-name">${esc(r.a.name||'Allegato')}</div>${r.note?`<div class="muted" style="font-size:11px;margin-top:3px">${esc(r.note).slice(0,140)}${String(r.note).length>140?'…':''}</div>`:''}</td><td><span class="attachment-type-badge">${esc(attachmentFileKind(r.a))}</span></td><td><div class="attachment-summary-actions">${attachmentSummaryAction(r.a)}</div></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Nessun allegato presente nel caso.</div>';const ctl=openModal('Riepilogo allegati',body,close=>close(),'Chiudi');const imgs=allCaseImages(c);document.querySelectorAll('.summary-open-image').forEach(b=>b.onclick=()=>openLightbox(imgs,b.dataset.id));document.querySelectorAll('.summary-open-network').forEach(b=>b.onclick=()=>openNetworkFile(b.dataset.path||''));document.querySelectorAll('.summary-open-email').forEach(b=>b.onclick=()=>openEmailInline(b.dataset.att,b.dataset.name||'Messaggio.msg'));return ctl}
 
 function renderCase(id){const c=state.cases.find(x=>x.id===id);if(!c||c.deletedAt){setView('cases');return}const atts=c.attachments||[],solAtt=c.solution?.attachments||[],cover=coverAttachment(c),nav=caseNavInfo(c.id);currentCaseId=c.id;
 document.getElementById('app').innerHTML=`<div class="case-navbar"><button class="btn btn-ghost btn-sm" id="backBtn">← Torna alla lista</button><div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn btn-soft btn-sm" id="prevCaseBtn" ${!nav.prev?'disabled':''}>← Caso precedente</button><span class="case-nav-position">${nav.pos} di ${nav.total}</span><button class="btn btn-soft btn-sm" id="nextCaseBtn" ${!nav.next?'disabled':''}>Caso successivo →</button></div></div><div class="page-head"><div><div class="case-id">Scheda ${esc(c.sheet)}</div><h1 class="page-title">${esc(c.title)}</h1></div><div class="case-actionbar"><button class="btn btn-ghost" id="agendaCaseBtn">☑ ${state.agendaIds.includes(c.id)?'Rimuovi da Agenda':'Aggiungi ad Agenda'}</button><span class="sep"></span><button class="btn btn-soft" id="editCaseBtn">✎ Modifica caso</button><button class="btn btn-soft" id="updateBtn">↻ Aggiorna riunione</button><button class="btn btn-soft" id="solutionBtn">✓ Modifica soluzione</button><button class="btn btn-soft" id="attachmentsSummaryBtn">📎 Riepilogo allegati</button><span class="sep"></span><button class="btn btn-danger" id="deleteCaseBtn">⌫ Elimina caso</button></div></div>
@@ -556,7 +726,7 @@ document.getElementById('app').innerHTML=`<div class="case-navbar"><button class
 <section class="card"><h3 class="section-title">SOLUZIONE</h3>${ensureSolution(c).text?`<p class="case-body-text">${esc(c.solution.text)}</p>${renderParts(c.solution.parts,true)}`:`<div class="muted">Soluzione non ancora definita.</div>`}<div class="meta-grid" style="margin-top:14px"><div class="meta"><b>CID</b>${esc(ensureSolution(c).cid||'—')}</div><div class="meta"><b>CUT IN</b>${esc(ensureSolution(c).cutIn||'—')}</div></div><div style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><b>Allegati SOLUZIONE</b><button class="btn btn-soft btn-sm add-external-link" data-section="solution" type="button">+ Aggiungi collegamento</button></div>${renderAttachments(solAtt,'solution',c.id)}${dropZoneHtml('solution',c.id)}</div></section>
 <section class="card"><h3 class="section-title">Storico riunioni</h3>${renderTimeline(c)}</section>
 <section class="card danger-zone"><h3 class="section-title">Zona eliminazione</h3><div class="muted" style="margin-bottom:10px">Il caso viene spostato nel Cestino e può essere ripristinato.</div><button class="btn btn-danger" id="deleteCaseBottom">Sposta caso nel Cestino</button></section>
-</div><aside class="case-side"><section class="card score-card"><h3 class="section-title">Scoring</h3><div class="score-total"><div class="muted">PUNTEGGIO</div><strong>${total(c)}</strong></div><div class="score-list"><div class="score-row"><span>Frequenza${c.frequencyCases!==null&&c.frequencyCases!==undefined?' ('+c.frequencyCases+' casi)':''}</span><b>${c.frequencyScoreStored??freqScore(c.frequencyCases)}</b></div><div class="score-row"><span>Sicurezza</span><b>${c.safety||0}</b></div><div class="score-row"><span>Sales deterrent</span><b>${c.sales||0}</b></div><div class="score-row"><span>Costi garanzia${c.warrantyCost!==null&&c.warrantyCost!==undefined?' (€ '+Number(c.warrantyCost||0).toLocaleString('it-IT')+')':''}</span><b>${c.warrantyScoreStored??warrantyScore(c.warrantyCost)}</b></div><div class="score-row"><span>Urgenza</span><b>${c.urgency||0}</b></div><div class="score-row"><span>Anzianità caso${c.status==='closed'?' (ferma alla chiusura)':' (1 punto/mese)'}</span><b>${ageScoreForCase(c)}</b></div><div class="score-row"><span>Bonus manuale</span><b>+${c.bonus||0}</b></div></div>${c.bonusReason?`<div class="bonus-note">${esc(c.bonusReason)}</div>`:''}</section></aside></div>`;
+</div><aside class="case-side"><section class="card score-card"><h3 class="section-title">Scoring</h3><div class="score-total"><div class="muted">PUNTEGGIO</div><strong>${total(c)}</strong></div><div class="score-list"><div class="score-row"><span>Frequenza${c.frequencyCases!==null&&c.frequencyCases!==undefined?' ('+c.frequencyCases+' casi)':''}</span><b>${c.frequencyScoreStored??freqScore(c.frequencyCases)}</b></div><div class="score-row"><span>Sicurezza</span><b>${c.safety||0}</b></div><div class="score-row"><span>Sales deterrent</span><b>${c.sales||0}</b></div><div class="score-row"><span>Costi garanzia${c.warrantyCost!==null&&c.warrantyCost!==undefined?' (€ '+Number(c.warrantyCost||0).toLocaleString('it-IT')+')':''}</span><b>${c.warrantyScoreStored??warrantyScore(c.warrantyCost)}</b></div><div class="score-row"><span>Urgenza</span><b>${c.urgency||0}</b></div><div class="score-row"><span>Anzianità caso${c.status==='closed'?' (congelata alla chiusura)':' (mesi completi)'}</span><b>${ageScoreForCase(c)}</b></div><div class="score-row"><span>Bonus manuale</span><b>+${c.bonus||0}</b></div></div>${c.bonusReason?`<div class="bonus-note">${esc(c.bonusReason)}</div>`:''}</section></aside></div>`;
 document.getElementById('backBtn').onclick=()=>{currentCaseId=null;render()};document.getElementById('prevCaseBtn').onclick=()=>navigateCase(nav.prev);document.getElementById('nextCaseBtn').onclick=()=>navigateCase(nav.next);document.getElementById('agendaCaseBtn').onclick=()=>toggleAgenda(c.id,!state.agendaIds.includes(c.id));document.getElementById('editCaseBtn').onclick=()=>openEditCase(c);document.getElementById('updateBtn').onclick=()=>openUpdate(c);document.getElementById('solutionBtn').onclick=()=>openSolution(c);document.getElementById('attachmentsSummaryBtn').onclick=()=>openAttachmentSummary(c);document.getElementById('deleteCaseBtn').onclick=()=>moveToTrash(c.id);document.getElementById('deleteCaseBottom').onclick=()=>moveToTrash(c.id);document.getElementById('changeCoverBtn').onclick=()=>openCoverPicker(c);if(document.getElementById('removeCoverBtn'))document.getElementById('removeCoverBtn').onclick=()=>setCover(c,null);bindAttachmentButtons();bindThumbLightboxes(document.getElementById('app'));bindDropZones(document.getElementById('app'));document.querySelectorAll('.edit-history-note').forEach(b=>b.onclick=()=>{const u=(c.updates||[]).find(x=>String(x.id)===String(b.dataset.updateId));if(u)openEditHistoricalUpdate(c,u)});}
 
 function renderParts(parts=[],qty){if(!parts.length)return '<div class="muted" style="margin-top:10px">Nessun ricambio indicato.</div>';return `<div style="margin-top:12px"><b>Ricambi</b><table class="parts-table"><thead><tr><th>Part Number</th><th>Descrizione</th>${qty?'<th>Q.tà</th>':''}</tr></thead><tbody>${parts.map(p=>`<tr><td>${esc(p.pn||'—')}</td><td>${esc(p.desc||'—')}</td>${qty?`<td>${esc(p.qty||'—')}</td>`:''}</tr>`).join('')}</tbody></table></div>`}
@@ -567,7 +737,7 @@ const external=arr.filter(a=>a.external);
 const online=arr.filter(a=>a.live&&!a.external);
 const legacyHtml=legacy.length?`<div style="display:flex;flex-direction:column;gap:7px;margin-top:8px">${legacy.map(a=>renderLegacyMissing(a,caseId,kind)).join('')}</div>`:'';
 const externalHtml=external.length?`<div class="attach-grid" style="margin-top:8px">${external.map(a=>{const network=externalTargetType(a.externalUrl)==='network';const primary=network?`<button class="btn btn-soft btn-sm open-network-file" data-path="${esc(a.externalUrl)}" type="button">Apri</button>`:`<a class="btn btn-soft btn-sm" href="${esc(a.externalUrl)}" target="_blank" rel="noopener noreferrer">Apri</a>`;return `<div class="attachment document-attachment"><div class="doc-preview"><div class="doc-ext">${network?'RETE':'LINK'}</div><div class="doc-kind">${esc(network?'Rete aziendale':(a.externalProvider||'Collegamento esterno'))}</div></div><div class="attachment-body"><div class="attachment-name" title="${esc(a.name)}">${esc(a.name)}</div><div class="attachment-tools">${primary}<button class="btn btn-ghost btn-sm edit-external-link" data-att="${esc(a.id)}" type="button">Modifica link</button><button class="btn btn-danger btn-sm delete-attachment" data-case="${esc(caseId)}" data-kind="${esc(kind)}" data-att="${esc(a.id)}" type="button">Rimuovi</button></div></div></div>`}).join('')}</div>`:'';
-const onlineHtml=online.length?`<div class="attach-grid" style="margin-top:8px">${online.map(a=>{const img=isImageAttachment(a);const media=img?`<div class="attachment-media"><img class="hover-preview-source js-case-image-direct" data-image-src="${esc(a.dataUrl)}" data-image-name="${esc(a.name)}" data-image-id="${esc(a.id)}" data-preview-src="${esc(a.dataUrl)}" src="${esc(a.dataUrl)}" alt="${esc(a.name)}"></div>`:`<div class="doc-preview"><div class="doc-ext">${esc(attachmentExtension(a))}</div><div class="doc-kind">${esc(attachmentKindLabel(a))}</div></div>`;return `<div class="attachment ${img?'image-attachment':'document-attachment'}">${media}<div class="attachment-body"><div class="attachment-name" title="${esc(a.name)}">${esc(a.name)}</div><div class="attachment-tools">${img?`<button class="btn btn-soft btn-sm choose-cover-inline" data-case="${caseId}" type="button">Scegli copertina</button><button class="btn btn-soft btn-sm open-image-inline" data-image-src="${esc(a.dataUrl)}" data-image-name="${esc(a.name)}" data-image-id="${esc(a.id)}" type="button">Apri / Zoom</button>`:`<a class="btn btn-soft btn-sm" href="${attachmentOpenUrl(a.id)}" target="_blank" rel="noopener">Apri</a>`}<a class="btn btn-ghost btn-sm" href="${attachmentDownloadUrl(a.id)}">Scarica</a><button class="btn btn-danger btn-sm delete-attachment" data-case="${caseId}" data-kind="${kind}" data-att="${a.id}">Elimina</button></div></div></div>`}).join('')}</div>`:'';
+const onlineHtml=online.length?`<div class="attach-grid" style="margin-top:8px">${online.map(a=>{const img=isImageAttachment(a);const media=img?`<div class="attachment-media"><img class="hover-preview-source js-case-image-direct" data-image-src="${esc(a.dataUrl)}" data-image-name="${esc(a.name)}" data-image-id="${esc(a.id)}" data-preview-src="${esc(a.dataUrl)}" src="${esc(a.dataUrl)}" alt="${esc(a.name)}"></div>`:`<div class="doc-preview"><div class="doc-ext">${esc(attachmentExtension(a))}</div><div class="doc-kind">${esc(attachmentKindLabel(a))}</div></div>`;return `<div class="attachment ${img?'image-attachment':'document-attachment'}">${media}<div class="attachment-body"><div class="attachment-name" title="${esc(a.name)}">${esc(a.name)}</div><div class="attachment-tools">${img?`<button class="btn btn-soft btn-sm choose-cover-inline" data-case="${caseId}" type="button">Scegli copertina</button><button class="btn btn-soft btn-sm open-image-inline" data-image-src="${esc(a.dataUrl)}" data-image-name="${esc(a.name)}" data-image-id="${esc(a.id)}" type="button">Apri / Zoom</button>`:(['MSG','EML'].includes(attachmentExtension(a))?`<button class="btn btn-soft btn-sm open-email-inline" data-att="${esc(a.id)}" data-name="${esc(a.name)}" type="button">Apri</button>`:`<a class="btn btn-soft btn-sm" href="${attachmentOpenUrl(a.id)}" target="_blank" rel="noopener">Apri</a>`)}<a class="btn btn-ghost btn-sm" href="${attachmentDownloadUrl(a.id)}">Scarica</a><button class="btn btn-danger btn-sm delete-attachment" data-case="${caseId}" data-kind="${kind}" data-att="${a.id}">Elimina</button></div></div></div>`}).join('')}</div>`:'';
 return legacyHtml+externalHtml+onlineHtml;
 }
 
@@ -576,6 +746,7 @@ function bindAttachmentButtons(){
   document.querySelectorAll('.choose-cover-inline').forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();const c=state.cases.find(x=>String(x.id)===String(b.dataset.case))||state.cases.find(x=>String(x.id)===String(currentCaseId));if(!c){alert('Caso non trovato.');return}openCoverPicker(c)});
   document.querySelectorAll('.edit-external-link').forEach(b=>b.onclick=()=>{const c=state.cases.find(x=>String(x.id)===String(currentCaseId));if(!c)return;const all=[...(c.attachments||[]),...(c.solution?.attachments||[]),...((c.updates||[]).flatMap(u=>u.attachments||[]))];const a=all.find(x=>String(x.id)===String(b.dataset.att));if(a)openEditExternalLink(c,a)});
   document.querySelectorAll('.open-network-file').forEach(b=>b.onclick=()=>openNetworkFile(b.dataset.path||''));
+  document.querySelectorAll('.open-email-inline').forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();openEmailInline(b.dataset.att,b.dataset.name||'Messaggio.msg')});
   document.querySelectorAll('.add-external-link').forEach(b=>b.onclick=()=>{const c=state.cases.find(x=>String(x.id)===String(currentCaseId));if(c)openAddExternalLink(c,b.dataset.section||'anomaly',b.dataset.updateId||null)});
   document.querySelectorAll('.open-image-inline').forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();const src=b.dataset.imageSrc||'';if(!src){alert('Immagine non disponibile.');return}openLightbox([{id:b.dataset.imageId||'direct',name:b.dataset.imageName||'Immagine',dataUrl:src,type:'image/*',live:true}],b.dataset.imageId||'direct')});
   document.querySelectorAll('.js-case-image-direct').forEach(img=>img.onclick=e=>{e.preventDefault();e.stopPropagation();const src=img.dataset.imageSrc||img.src;if(!src)return;openLightbox([{id:img.dataset.imageId||'direct',name:img.dataset.imageName||img.alt||'Immagine',dataUrl:src,type:'image/*',live:true}],img.dataset.imageId||'direct')});
@@ -600,7 +771,7 @@ state.meetings.push(snap);save();toast('Snapshot agenda salvato in Riunioni');
 async function imgSize(data){return new Promise(res=>{const im=new Image();im.onload=()=>res({w:im.naturalWidth,h:im.naturalHeight});im.onerror=()=>res({w:1,h:1});im.src=data})}
 async function addContain(slide,data,x,y,w,h){const d=await imgSize(data);const r=Math.min(w/d.w,h/d.h),iw=d.w*r,ih=d.h*r;slide.addImage({data,x:x+(w-iw)/2,y:y+(h-ih)/2,w:iw,h:ih})}
 function pptText(s){return String(s||'').replace(/\s+/g,' ').trim()}
-function allCaseImages(c){
+function allCaseImagesForPpt(c){
 const imgs=[];
 const push=(a,section,label,date)=>{
 if(a&&a.dataUrl&&String(a.type||'').startsWith('image/')) imgs.push({dataUrl:a.dataUrl,name:a.name||'',section,label:label||'',date:date||''});
@@ -626,7 +797,7 @@ let page=2;
 
 for(let idx=0;idx<cases.length;idx++){
 const c=cases[idx];
-const imgs=allCaseImages(c);
+const imgs=allCaseImagesForPpt(c);
 
 // MAIN CASE SLIDE
 slide=pptx.addSlide();slide.addImage({data:MENARINI_CONTENT,x:0,y:0,w:13.333,h:7.5});
