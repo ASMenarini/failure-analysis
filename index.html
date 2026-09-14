@@ -514,8 +514,8 @@ background:#c9d7e4;
 
 /* Copertina: grande, senza intestazione ridondante */
 .case-hero-card{padding:0;overflow:hidden}
-.case-hero-card .case-cover-media{height:360px;border-radius:0;background:#eef3f7}
-.case-hero-card .case-cover-image{height:100%;width:100%;object-fit:cover;border-radius:0}
+.case-hero-card .case-cover-media{height:360px;border-radius:0;background:linear-gradient(180deg,#eef3f7 0%,#e6edf4 100%);display:flex;align-items:center;justify-content:center;padding:16px}
+.case-hero-card .case-cover-image{height:100%;width:100%;object-fit:contain;object-position:center center;border-radius:10px;background:#fff;box-shadow:0 6px 18px rgba(15,23,42,.08)}
 .case-hero-card .case-cover-empty{height:360px;border:0;border-radius:0}
 .case-hero-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-top:1px solid var(--line);background:#fff}
 .case-hero-footer .case-cover-tools{margin:0;display:flex;gap:7px;flex-wrap:wrap}
@@ -1022,7 +1022,7 @@ document.getElementById('app').innerHTML=`<div class="case-navbar"><button class
 <div class="overview-tile"><b>Stato</b><strong><span class="status ${statusClass(c.status)}">${statusLabel(c.status)}</span></strong></div>
 <div class="overview-tile"><b>Categoria</b><strong>${quickCategory}</strong></div>
 <div class="overview-tile"><b>Modelli coinvolti</b><strong>${quickModels}</strong></div>
-<div class="overview-tile"><b>Priorità dinamica</b><strong>${priorityRank}</strong></div>
+
 <div class="overview-tile score-tile"><b>Punteggio</b><strong>${total(c)}</strong></div>
 <div class="overview-tile age-tile"><b>AGE / Anzianità</b><strong>${agePts} mesi · +${agePts} pt</strong></div>
 <div class="overview-tile"><b>Data apertura</b><strong>${fmtDate(c.date)}</strong></div>
