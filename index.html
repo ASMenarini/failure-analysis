@@ -453,6 +453,51 @@ background:#c9d7e4;
 .external-attachment .attachment-name{max-width:100%}
 @media(max-width:700px){.case-navbar{display:grid;grid-template-columns:auto minmax(0,1fr);gap:7px 8px;align-items:center}.case-navbar > div:last-child{grid-column:1/-1;margin-left:0!important;justify-content:center}.case-nav-title{text-align:left;padding:0 4px}.case-nav-title .case-nav-name{font-size:12px}}
 
+
+/* v16.4.5 — SOLO veste grafica sezione SOLUZIONE */
+.solution-card{
+  position:relative;
+  overflow:hidden;
+  border:1px solid #b9d5ea;
+  border-left:6px solid #16a363;
+  background:linear-gradient(180deg,#fbfdff 0%,#f5faff 100%);
+  box-shadow:0 6px 18px rgba(15,78,138,.06);
+}
+.solution-card::before{
+  content:'';
+  position:absolute;
+  left:0;right:0;top:0;
+  height:3px;
+  background:linear-gradient(90deg,#16a363 0%,#0b4f8a 55%,rgba(11,79,138,0) 100%);
+}
+.solution-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.solution-title-wrap{display:flex;align-items:center;gap:11px;min-width:0}
+.solution-icon{width:42px;height:42px;flex:0 0 42px;border-radius:50%;display:grid;place-items:center;background:#e5f7ed;color:#0d8a50;font-size:24px;font-weight:900;border:1px solid #bde7ce}
+.solution-card .solution-main-title{margin:0;color:#0b4f8a;font-size:22px;line-height:1.1;font-weight:900;letter-spacing:.15px}
+.solution-subtitle{margin-top:3px;color:#657586;font-size:12px;font-weight:600}
+.solution-valid-badge{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border-radius:9px;background:#e8f8ef;border:1px solid #c7ead5;color:#087a46;font-size:12px;font-weight:800;white-space:nowrap}
+.solution-description{background:#edf7ff;border:1px solid #c8e1f5;border-left:4px solid #1784d1;border-radius:10px;padding:13px 15px;margin-bottom:14px}
+.solution-description-label{display:flex;align-items:center;gap:7px;color:#0b4f8a;font-size:13px;font-weight:800;margin-bottom:6px}
+.solution-description .case-body-text{margin:0;font-size:14px;line-height:1.55}
+.solution-empty{padding:14px 15px;border:1px dashed #cbd7e2;border-radius:10px;background:rgba(255,255,255,.72);color:#667788;margin-bottom:14px}
+.solution-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.solution-meta{background:#fff;border:1px solid #cfe0ee;border-radius:10px;padding:12px 14px;min-height:66px;display:flex;align-items:center;gap:10px}
+.solution-meta-icon{width:32px;height:32px;border-radius:8px;background:#edf5fb;color:#0b4f8a;display:grid;place-items:center;font-size:16px;flex:0 0 32px}
+.solution-meta b{display:block;color:#667788;font-size:10px;text-transform:uppercase;letter-spacing:.45px;margin-bottom:3px}
+.solution-meta-value{font-size:15px;font-weight:800;color:#16324a;word-break:break-word}
+.solution-card .parts-table{margin-top:7px;background:#fff;border:1px solid #d6e4ef;border-radius:9px;overflow:hidden}
+.solution-card .parts-table th{background:#eaf4fb;color:#234863;font-weight:800}
+.solution-card .parts-table td,.solution-card .parts-table th{padding:9px 10px}
+.solution-parts-wrap{margin-top:14px;padding:12px 13px;background:rgba(255,255,255,.65);border:1px solid #d9e7f1;border-radius:10px}
+.solution-parts-title,.solution-attachments-title{display:flex;align-items:center;gap:7px;color:#123e64;font-weight:800}
+.solution-attachments{margin-top:14px;padding:12px 13px;background:rgba(255,255,255,.65);border:1px solid #d9e7f1;border-radius:10px}
+@media(max-width:700px){
+  .solution-card{border-left-width:4px}
+  .solution-card .solution-main-title{font-size:19px}
+  .solution-icon{width:38px;height:38px;flex-basis:38px;font-size:21px}
+  .solution-meta-grid{grid-template-columns:1fr}
+}
+
 </style>
 </head>
 <body>
@@ -747,7 +792,7 @@ document.getElementById('app').innerHTML=`<div class="case-navbar"><button class
 <section class="card"><h3 class="section-title">IMMAGINE DI PRESENTAZIONE</h3><div class="case-cover-card"><div><div class="case-cover-media">${cover?`<img class="case-cover-image js-case-image hover-preview-source" data-case-id="${c.id}" data-image-id="${cover.id}" data-preview-src="${cover.dataUrl}" src="${cover.dataUrl}" alt="${esc(cover.name)}">`:`<div class="case-cover-empty"><div><b>Nessuna immagine disponibile</b><br><span class="muted">Carica una foto oppure migra gli allegati storici.</span></div></div>`}</div><div class="case-cover-tools"><button class="btn btn-blue btn-sm" id="changeCoverBtn">${cover?'Cambia copertina':'Aggiungi copertina'}</button>${c.coverAttachmentId?`<button class="btn btn-ghost btn-sm" id="removeCoverBtn">Rimuovi scelta</button>`:''}</div>${dropZoneHtml('anomaly',c.id,'',true)}</div><div><div class="meta-grid"><div class="meta"><b>Stato</b><span class="status ${statusClass(c.status)}">${statusLabel(c.status)}</span></div><div class="meta"><b>Punteggio</b><span class="score-pill ${scoreClass(total(c))}">${total(c)}</span></div><div class="meta"><b>Ente</b>${esc(c.entity||'—')}</div><div class="meta"><b>Categoria</b>${esc(categoryLabel(c.category)||'—')}</div><div class="meta"><b>Modelli</b>${esc(c.models.join(', ')||'—')}</div><div class="meta"><b>Data apertura</b>${fmtDate(c.date)}</div></div><div class="hint" style="margin-top:10px">${cover?(c.coverAttachmentId?'Copertina selezionata manualmente.':'Copertina automatica: prima immagine disponibile.'):'La copertina comparirà anche nell’elenco casi.'}</div></div></div></section>
 <section class="card"><h3 class="section-title">ANOMALIA</h3><div class="meta-grid"><div class="meta"><b>Stato</b><span class="status ${statusClass(c.status)}">${statusLabel(c.status)}</span></div><div class="meta"><b>Data apertura</b>${fmtDate(c.date)}</div><div class="meta"><b>Ente</b>${esc(c.entity||'—')}</div><div class="meta"><b>Categoria</b>${esc(categoryLabel(c.category)||'—')}</div><div class="meta"><b>Modelli</b>${esc(c.models.join(', ')||'—')}</div><div class="meta"><b>Casi rilevati</b>${Number(c.frequencyCases)||0}</div></div><p class="case-body-text">${esc(c.description||'—')}</p>${renderParts(c.parts,false)}<div style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><b>Allegati ANOMALIA</b><button class="btn btn-soft btn-sm add-external-link" data-section="anomaly" type="button">+ Aggiungi collegamento</button></div>${renderAttachments(atts,'anomaly',c.id)}${dropZoneHtml('anomaly',c.id)}</div></section>
 <section class="card current-action"><h3 class="section-title">Azione corrente</h3>${c.currentAction?.text?`<div class="action-main-text">${esc(c.currentAction.text)}</div><div class="action-row"><div><span class="muted">Responsabile</span><br><b>${esc(c.currentAction.owner||'—')}</b></div><div><span class="muted">Scadenza</span><br><b>${fmtDate(c.currentAction.due)}</b></div><div><span class="muted">Stato</span><br><span class="tag">${esc(c.currentAction.status||'—')}</span></div></div>`:`<div class="muted">Nessuna azione corrente.</div>`}</section>
-<section class="card"><h3 class="section-title">SOLUZIONE</h3>${ensureSolution(c).text?`<p class="case-body-text">${esc(c.solution.text)}</p>${renderParts(c.solution.parts,true)}`:`<div class="muted">Soluzione non ancora definita.</div>`}<div class="meta-grid" style="margin-top:14px"><div class="meta"><b>CID</b>${esc(ensureSolution(c).cid||'—')}</div><div class="meta"><b>CUT IN</b>${esc(ensureSolution(c).cutIn||'—')}</div></div><div style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><b>Allegati SOLUZIONE</b><button class="btn btn-soft btn-sm add-external-link" data-section="solution" type="button">+ Aggiungi collegamento</button></div>${renderAttachments(solAtt,'solution',c.id)}${dropZoneHtml('solution',c.id)}</div></section>
+<section class="card solution-card"><div class="solution-head"><div class="solution-title-wrap"><div class="solution-icon">✓</div><div><h3 class="solution-main-title">SOLUZIONE</h3><div class="solution-subtitle">Intervento risolutivo e parti sostituite</div></div></div>${c.status==='closed'?`<div class="solution-valid-badge">✓ SOLUZIONE VALIDATA</div>`:''}</div>${ensureSolution(c).text?`<div class="solution-description"><div class="solution-description-label">🔧 Descrizione soluzione</div><p class="case-body-text">${esc(c.solution.text)}</p></div>`:`<div class="solution-empty">Soluzione non ancora definita.</div>`}<div class="solution-meta-grid"><div class="solution-meta"><div class="solution-meta-icon">⚙</div><div><b>CID soluzione</b><div class="solution-meta-value">${esc(ensureSolution(c).cid||'—')}</div></div></div><div class="solution-meta"><div class="solution-meta-icon">▣</div><div><b>CUT IN</b><div class="solution-meta-value">${esc(ensureSolution(c).cutIn||'—')}</div></div></div></div>${(c.solution.parts||[]).length?`<div class="solution-parts-wrap"><div class="solution-parts-title">◆ Ricambi soluzione</div>${renderParts(c.solution.parts,true)}</div>`:''}<div class="solution-attachments"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div class="solution-attachments-title">📎 Allegati soluzione</div><button class="btn btn-soft btn-sm add-external-link" data-section="solution" type="button">+ Aggiungi collegamento</button></div>${renderAttachments(solAtt,'solution',c.id)}${dropZoneHtml('solution',c.id)}</div></section>
 <section class="card"><h3 class="section-title">Storico riunioni</h3>${renderTimeline(c)}</section>
 <section class="card danger-zone"><h3 class="section-title">Zona eliminazione</h3><div class="muted" style="margin-bottom:10px">Il caso viene spostato nel Cestino e può essere ripristinato.</div><button class="btn btn-danger" id="deleteCaseBottom">Sposta caso nel Cestino</button></section>
 </div><aside class="case-side"><section class="card score-card"><h3 class="section-title">Scoring</h3><div class="score-total"><div class="muted">PUNTEGGIO</div><strong>${total(c)}</strong></div><div class="score-list"><div class="score-row"><span>Frequenza${c.frequencyCases!==null&&c.frequencyCases!==undefined?' ('+c.frequencyCases+' casi)':''}</span><b>${c.frequencyScoreStored??freqScore(c.frequencyCases)}</b></div><div class="score-row"><span>Sicurezza</span><b>${c.safety||0}</b></div><div class="score-row"><span>Sales deterrent</span><b>${c.sales||0}</b></div><div class="score-row"><span>Costi garanzia${c.warrantyCost!==null&&c.warrantyCost!==undefined?' (€ '+Number(c.warrantyCost||0).toLocaleString('it-IT')+')':''}</span><b>${c.warrantyScoreStored??warrantyScore(c.warrantyCost)}</b></div><div class="score-row"><span>Urgenza</span><b>${c.urgency||0}</b></div><div class="score-row"><span>Anzianità caso${c.status==='closed'?' (congelata alla chiusura)':' (mesi completi)'}</span><b>${ageScoreForCase(c)}</b></div><div class="score-row"><span>Bonus manuale</span><b>+${c.bonus||0}</b></div></div>${c.bonusReason?`<div class="bonus-note">${esc(c.bonusReason)}</div>`:''}</section></aside></div>`;
