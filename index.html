@@ -1139,6 +1139,13 @@ if(isAgenda){document.getElementById('snapshotAgendaBtn').onclick=createAgendaSn
 }
 
 function caseAttachmentSummary(c){const rows=[];const push=(a,section,date,note)=>rows.push({a,section,date:date||'',note:note||''});(c.attachments||[]).forEach(a=>push(a,'ANOMALIA',c.date,''));(c.updates||[]).forEach(u=>(u.attachments||[]).forEach(a=>push(a,'RIUNIONE',u.date,u.text||'')));(c.solution?.attachments||[]).forEach(a=>push(a,'SOLUZIONE','',c.solution?.text||''));return rows.sort((x,y)=>String(y.date||'').localeCompare(String(x.date||'')))}
+async function createAgendaSnapshot(){
+const cs=agendaCases();
+if(!cs.length){alert('Seleziona almeno un caso per l’agenda.');return}
+const d=localDateISO();
+try{const created=await api('/api/meetings',{method:'POST',body:JSON.stringify({meeting_date:d,title:'Failure Analysis'})});const snap=await loadMeetingFull(created);state.meetings.push(snap);save();toast('Snapshot agenda salvato in Riunioni')}catch(e){alert('Errore salvataggio snapshot: '+e.message)}
+}
+
 function openAttachmentSummary(c){const rows=caseAttachmentSummary(c);const body=rows.length?`<div class="snapshot-frame"><table class="attachment-summary-table"><thead><tr><th>Data nota</th><th>Sezione</th><th>Titolo allegato</th><th>Tipo</th><th>Azione</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${fmtDate(r.date)}</td><td>${esc(r.section)}</td><td><div class="attachment-summary-name">${esc(r.a.name||'Allegato')}</div>${r.note?`<div class="muted" style="font-size:11px;margin-top:3px">${esc(r.note).slice(0,140)}${String(r.note).length>140?'…':''}</div>`:''}</td><td><span class="attachment-type-badge">${esc(attachmentFileKind(r.a))}</span></td><td><div class="attachment-summary-actions">${attachmentSummaryAction(r.a)}</div></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Nessun allegato presente nel caso.</div>';const ctl=openModal('Riepilogo allegati',body,close=>close(),'Chiudi');const imgs=allCaseImages(c);document.querySelectorAll('.summary-open-image').forEach(b=>b.onclick=()=>openLightbox(imgs,b.dataset.id));document.querySelectorAll('.summary-open-network').forEach(b=>b.onclick=()=>openNetworkFile(b.dataset.path||''));document.querySelectorAll('.summary-open-email').forEach(b=>b.onclick=()=>openEmailInline(b.dataset.att,b.dataset.name||'Messaggio.msg'));return ctl}
 
 function renderCase(id){const c=state.cases.find(x=>x.id===id);if(!c||c.deletedAt){setView('cases');return}const atts=c.attachments||[],solAtt=c.solution?.attachments||[],cover=coverAttachment(c),nav=caseNavInfo(c.id);currentCaseId=c.id;
