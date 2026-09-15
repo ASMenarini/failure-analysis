@@ -767,6 +767,26 @@ background:#c9d7e4;
 
 .case-attachments-hub{padding:14px}
 .case-attachments-hub>.section-title{margin-bottom:10px;color:#0b4f8a}
+/* v17.2 — pannello allegati compatto e leggibile */
+.attachment-rail-section{padding:10px 0 12px;border-top:1px solid #e7edf3}
+.attachment-rail-section:first-of-type{border-top:0;padding-top:0}
+.attachment-rail-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}
+.attachment-rail-head>b{font-size:11px;text-transform:uppercase;letter-spacing:.45px;color:#536273}
+.attachment-rail-list{display:flex;flex-direction:column;gap:6px}
+.attachment-rail-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:8px 9px;border:1px solid #e2e8ef;border-radius:9px;background:#fbfcfe}
+.attachment-rail-main{min-width:0;display:flex;align-items:center;gap:8px}
+.attachment-rail-fileicon{width:30px;height:30px;flex:0 0 30px;border-radius:7px;background:#edf4fa;display:grid;place-items:center;font-size:10px;font-weight:900;color:#0b4f8a}
+.attachment-rail-fileicon.img{overflow:hidden;padding:0}
+.attachment-rail-fileicon.img img{width:100%;height:100%;object-fit:cover;display:block}
+.attachment-rail-text{min-width:0}
+.attachment-rail-name{font-size:12px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#1f2d3a}
+.attachment-rail-meta{margin-top:2px;font-size:10px;color:#7a8794;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.attachment-rail-actions{display:flex;gap:4px;align-items:center;flex-wrap:nowrap}
+.attachment-rail-actions .btn,.attachment-rail-actions a.btn{padding:5px 7px!important;font-size:10px!important;white-space:nowrap}
+.rail-empty{font-size:12px;color:#8a96a3;padding:5px 2px 7px}
+.case-attachments-hub .drop-zone{margin-top:7px;padding:9px 8px}
+.case-attachments-hub .drop-zone b{font-size:11px}
+.case-attachments-hub .drop-zone small{font-size:9px}
 .attachment-rail-section{border-top:1px solid #e7edf3;padding-top:11px;margin-top:11px}
 .attachment-rail-section:first-of-type{border-top:0;padding-top:0;margin-top:0}
 .attachment-rail-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}
@@ -1092,7 +1112,7 @@ function openNetworkFile(value){const fileUri=networkFileUri(value);if(!fileUri)
 function renderLegacyMissing(a,caseId,kind){return `<div class="legacy-missing" title="${esc(a.legacyPath||a.name||'')}"><span class="legacy-badge">↗</span><div class="legacy-text"><div class="legacy-name">${esc(a.name||'Collegamento storico')}</div><div>File storico non migrato · non disponibile online</div></div><div class="legacy-actions"><button class="btn btn-danger btn-sm delete-attachment" data-case="${esc(caseId)}" data-kind="${esc(kind)}" data-att="${esc(a.id)}" type="button">Rimuovi</button></div></div>`}
 function attachmentFileKind(a){const n=String(a?.name||'').toLowerCase(),t=String(a?.type||'').toLowerCase();if(isImageAttachment(a))return 'IMMAGINE';if(t==='application/pdf'||/\.pdf$/i.test(n))return 'PDF';if(/\.msg$/i.test(n)||t==='application/vnd.ms-outlook')return 'MSG';if(/\.pptx?$/i.test(n)||t.includes('presentation'))return /\.ppt$/i.test(n)?'PPT':'PPTX';if(/\.xlsx?$/i.test(n)||t.includes('spreadsheet')||t.includes('excel'))return /\.xls$/i.test(n)?'XLS':'XLSX';if(/\.docx?$/i.test(n)||t.includes('wordprocessing')||t.includes('msword'))return /\.doc$/i.test(n)?'DOC':'DOCX';return (n.split('.').pop()||'FILE').toUpperCase()}
 function attachmentSummaryAction(a){const kind=attachmentFileKind(a);if(a?.external){if(externalTargetType(a.externalUrl)==='network')return `<button class="btn btn-soft btn-sm summary-open-network" data-path="${esc(a.externalUrl)}" type="button">Apri collegamento</button>`;return `<a class="btn btn-soft btn-sm" href="${esc(a.externalUrl)}" target="_blank" rel="noopener noreferrer">Apri collegamento</a>`}if(!a?.live)return '<span class="muted">Non disponibile online</span>';if(kind==='IMMAGINE')return `<button class="btn btn-soft btn-sm summary-open-image" data-id="${esc(a.id)}" type="button">Apri / Zoom</button>`;if(kind==='MSG')return `<button class="btn btn-soft btn-sm summary-open-email" data-att="${esc(a.id)}" data-name="${esc(a.name)}" type="button">Apri MSG</button>`;if(kind==='PDF')return `<a class="btn btn-soft btn-sm" href="${attachmentOpenUrl(a.id)}" target="_blank" rel="noopener noreferrer">Apri PDF</a>`;if(['PPT','PPTX','XLS','XLSX','DOC','DOCX'].includes(kind))return `<a class="btn btn-soft btn-sm" href="${officeViewerUrl(a.id)}" target="_blank" rel="noopener noreferrer">Apri online</a>`;return `<a class="btn btn-soft btn-sm" href="${attachmentOpenUrl(a.id)}" target="_blank" rel="noopener noreferrer">Apri file</a>`}
-function allCaseImages(c){const out=[];const add=(arr,source)=>{(arr||[]).forEach(a=>{if(isImageAttachment(a))out.push({...a,source})})};add(c.attachments,'ANOMALIA');add(c.solution?.attachments,'SOLUZIONE');(c.updates||[]).forEach(u=>add(u.attachments,`RIUNIONE ${fmtDate(u.date)}`));return out}
+function allCaseImages(c){const out=[];const add=(arr,source)=>{(arr||[]).forEach(a=>{if(isImageAttachment(a))out.push({...a,source})})};add(c.attachments,'DESCRIZIONE');add(c.solution?.attachments,'SOLUZIONE');(c.updates||[]).forEach(u=>add(u.attachments,`RIUNIONE ${fmtDate(u.date)}`));return out}
 function coverAttachment(c){const imgs=allCaseImages(c);return imgs.find(a=>a.id===c.coverAttachmentId)||imgs[0]||null}
 function renderCaseThumb(c){const a=coverAttachment(c);return a?`<img class="case-thumb js-lightbox-thumb hover-preview-source" data-case-id="${c.id}" data-image-id="${a.id}" data-preview-src="${a.dataUrl}" src="${a.dataUrl}" alt="Copertina ${esc(c.sheet)}" title="Ingrandisci copertina">`:`<div class="case-thumb-placeholder">NESSUNA<br>IMMAGINE</div>`}
 function setCaseNav(ids,label){caseNavContext={ids:[...ids],label:label||'Casi'} }
@@ -1138,7 +1158,7 @@ document.querySelectorAll('[data-kpi]').forEach(k=>k.onclick=()=>setView(k.datas
 if(isAgenda){document.getElementById('snapshotAgendaBtn').onclick=createAgendaSnapshot;document.getElementById('exportAgendaBtn').onclick=()=>exportAgendaPptx(agendaCases())}
 }
 
-function caseAttachmentSummary(c){const rows=[];const push=(a,section,date,note)=>rows.push({a,section,date:date||'',note:note||''});(c.attachments||[]).forEach(a=>push(a,'ANOMALIA',c.date,''));(c.updates||[]).forEach(u=>(u.attachments||[]).forEach(a=>push(a,'RIUNIONE',u.date,u.text||'')));(c.solution?.attachments||[]).forEach(a=>push(a,'SOLUZIONE','',c.solution?.text||''));return rows.sort((x,y)=>String(y.date||'').localeCompare(String(x.date||'')))}
+function caseAttachmentSummary(c){const rows=[];const push=(a,section,date,note)=>rows.push({a,section,date:date||'',note:note||''});(c.attachments||[]).forEach(a=>push(a,'DESCRIZIONE',c.date,''));(c.updates||[]).forEach(u=>(u.attachments||[]).forEach(a=>push(a,'RIUNIONE',u.date,u.text||'')));(c.solution?.attachments||[]).forEach(a=>push(a,'SOLUZIONE','',c.solution?.text||''));return rows.sort((x,y)=>String(y.date||'').localeCompare(String(x.date||'')))}
 async function createAgendaSnapshot(){
 const cs=agendaCases();
 if(!cs.length){alert('Seleziona almeno un caso per l’agenda.');return}
@@ -1148,6 +1168,36 @@ try{const created=await api('/api/meetings',{method:'POST',body:JSON.stringify({
 
 function openAttachmentSummary(c){const rows=caseAttachmentSummary(c);const body=rows.length?`<div class="snapshot-frame"><table class="attachment-summary-table"><thead><tr><th>Data nota</th><th>Sezione</th><th>Titolo allegato</th><th>Tipo</th><th>Azione</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${fmtDate(r.date)}</td><td>${esc(r.section)}</td><td><div class="attachment-summary-name">${esc(r.a.name||'Allegato')}</div>${r.note?`<div class="muted" style="font-size:11px;margin-top:3px">${esc(r.note).slice(0,140)}${String(r.note).length>140?'…':''}</div>`:''}</td><td><span class="attachment-type-badge">${esc(attachmentFileKind(r.a))}</span></td><td><div class="attachment-summary-actions">${attachmentSummaryAction(r.a)}</div></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Nessun allegato presente nel caso.</div>';const ctl=openModal('Riepilogo allegati',body,close=>close(),'Chiudi');const imgs=allCaseImages(c);document.querySelectorAll('.summary-open-image').forEach(b=>b.onclick=()=>openLightbox(imgs,b.dataset.id));document.querySelectorAll('.summary-open-network').forEach(b=>b.onclick=()=>openNetworkFile(b.dataset.path||''));document.querySelectorAll('.summary-open-email').forEach(b=>b.onclick=()=>openEmailInline(b.dataset.att,b.dataset.name||'Messaggio.msg'));return ctl}
 
+function renderRailAttachmentsCompact(arr=[],kind,caseId){
+  if(!arr.length)return '<div class="rail-empty">Nessun allegato.</div>';
+  return `<div class="attachment-rail-list">${arr.map(a=>{
+    const img=isImageAttachment(a);
+    const ext=attachmentExtension(a)||'FILE';
+    const kindLabel=attachmentKindLabel(a)||ext;
+    const displayName=a.external?externalDisplayName(a):(a.name||'Allegato');
+    let icon='';
+    if(img&&a.dataUrl){icon=`<div class="attachment-rail-fileicon img"><img src="${esc(a.dataUrl)}" alt="${esc(displayName)}"></div>`}
+    else icon=`<div class="attachment-rail-fileicon">${esc((a.external?(externalTargetType(a.externalUrl)==='network'?'RETE':'LINK'):ext).slice(0,5))}</div>`;
+    let open='';
+    if(a.external){
+      if(externalTargetType(a.externalUrl)==='network')open=`<button class="btn btn-soft btn-sm open-network-file" data-path="${esc(a.externalUrl)}" type="button">Apri</button>`;
+      else open=`<a class="btn btn-soft btn-sm" href="${esc(a.externalUrl)}" target="_blank" rel="noopener noreferrer">Apri</a>`;
+    }else if(!a.live){
+      open='';
+    }else if(img){
+      open=`<button class="btn btn-soft btn-sm open-image-inline" data-image-src="${esc(a.dataUrl)}" data-image-name="${esc(a.name||'Immagine')}" data-image-id="${esc(a.id)}" type="button">Zoom</button>`;
+    }else{
+      open=attachmentOpenAction(a,'Apri');
+    }
+    const download=(!a.external&&a.live)?`<a class="btn btn-ghost btn-sm" href="${attachmentDownloadUrl(a.id)}">Scarica</a>`:'';
+    const edit=a.external?`<button class="btn btn-ghost btn-sm edit-external-link" data-att="${esc(a.id)}" type="button">Link</button>`:'';
+    const cover=(img&&a.live)?`<button class="btn btn-ghost btn-sm choose-cover-inline" data-case="${esc(caseId)}" type="button">Copertina</button>`:'';
+    const del=`<button class="btn btn-danger btn-sm delete-attachment" data-case="${esc(caseId)}" data-kind="${esc(kind)}" data-att="${esc(a.id)}" type="button">×</button>`;
+    const meta=a.external?(externalTargetType(a.externalUrl)==='network'?'Rete aziendale':(a.externalProvider||'Collegamento')):(!a.live?'Storico non migrato':kindLabel);
+    return `<div class="attachment-rail-row"><div class="attachment-rail-main">${icon}<div class="attachment-rail-text"><div class="attachment-rail-name" title="${esc(displayName)}">${esc(displayName)}</div><div class="attachment-rail-meta">${esc(meta)}</div></div></div><div class="attachment-rail-actions">${cover}${open}${download}${edit}${del}</div></div>`;
+  }).join('')}</div>`;
+}
+
 function renderCase(id){const c=state.cases.find(x=>x.id===id);if(!c||c.deletedAt){setView('cases');return}const atts=c.attachments||[],solAtt=c.solution?.attachments||[],cover=coverAttachment(c),nav=caseNavInfo(c.id);currentCaseId=c.id;
 const quickModels=esc(c.models.join(', ')||'—'),quickEntity=esc(c.entity||'—'),quickCategory=esc(categoryLabel(c.category)||'—');
 const agePts=ageScoreForCase(c);
@@ -1156,7 +1206,7 @@ const updateDates=sortedUpdates.map(x=>x.date).filter(Boolean),lastUpdate=update
 const latestActionUpdate=sortedUpdates.find(x=>String(x.action||'').trim()&&String(x.action||'').trim()===String(c.currentAction?.text||'').trim()&&String(x.owner||'').trim()===String(c.currentAction?.owner||'').trim()&&String(x.due||'').trim()===String(c.currentAction?.due||'').trim()&&String(x.status||'').trim()===String(c.currentAction?.status||'').trim())||null;
 const actionAtt=latestActionUpdate?.attachments||[];
 const historyAttUpdates=sortedUpdates.filter(x=>!latestActionUpdate||String(x.id)!==String(latestActionUpdate.id)).filter(x=>(x.attachments||[]).length);
-const railSection=(title,arr,kind,section,updateId='')=>`<div class="attachment-rail-section"><div class="attachment-rail-head"><b>${title}</b>${section==='update'&&!updateId?'':`<button class="btn btn-soft btn-sm add-external-link" data-section="${esc(section)}" ${updateId?`data-update-id="${esc(updateId)}"`:''} type="button">+ Link</button>`}</div>${arr.length?renderAttachments(arr,kind,c.id):'<div class="rail-empty">Nessun allegato.</div>'}${updateId||section!=='update'?dropZoneHtml(section,c.id,updateId):''}</div>`;
+const railSection=(title,arr,kind,section,updateId='')=>`<div class="attachment-rail-section"><div class="attachment-rail-head"><b>${title}</b>${section==='update'&&!updateId?'':`<button class="btn btn-soft btn-sm add-external-link" data-section="${esc(section)}" ${updateId?`data-update-id="${esc(updateId)}"`:''} type="button">+ Link</button>`}</div>${renderRailAttachmentsCompact(arr,kind,c.id)}${updateId||section!=='update'?dropZoneHtml(section,c.id,updateId):''}</div>`;
 const historyRail=historyAttUpdates.length?historyAttUpdates.map(u=>`<div class="history-attachment-group"><div class="history-attachment-date">${fmtDate(u.date)}</div>${renderAttachments(u.attachments||[],'update:'+u.id,c.id)}</div>`).join(''):'<div class="rail-empty">Nessun allegato storico.</div>';
 document.getElementById('app').innerHTML=`<div class="case-navbar"><button class="btn btn-ghost btn-sm" id="backBtn">← Torna alla lista</button><div class="case-nav-title" title="${esc(c.title)}"><span class="case-nav-sheet">Scheda ${esc(c.sheet)}</span><span class="case-nav-name">${esc(c.title)}</span></div><div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn btn-soft btn-sm" id="prevCaseBtn" ${!nav.prev?'disabled':''}>← Caso precedente</button><span class="case-nav-position">${nav.pos} di ${nav.total}</span><button class="btn btn-soft btn-sm" id="nextCaseBtn" ${!nav.next?'disabled':''}>Caso successivo →</button></div></div>
 <div class="case-detail-header"><div class="case-detail-heading"><div class="case-id">Scheda ${esc(c.sheet)}</div><h1 class="page-title">${esc(c.title)}</h1><div class="case-quickline"><span class="status ${statusClass(c.status)}">${statusLabel(c.status)}</span><span class="dot">•</span><span>${quickModels}</span><span class="dot">•</span><span>${quickEntity}</span>${categoryLabel(c.category)?`<span class="dot">•</span><span>${quickCategory}</span>`:''}</div></div><div class="case-actionbar"><button class="btn btn-ghost" id="agendaCaseBtn">☑ ${state.agendaIds.includes(c.id)?'Rimuovi da Agenda':'Aggiungi ad Agenda'}</button><span class="sep"></span><button class="btn btn-soft" id="editCaseBtn">✎ Modifica caso</button><button class="btn btn-soft" id="updateBtn">↻ Aggiorna riunione</button><button class="btn btn-soft" id="solutionBtn">✓ Modifica soluzione</button><button class="btn btn-soft" id="attachmentsSummaryBtn">📎 Riepilogo allegati</button><span class="sep"></span><button class="btn btn-danger" id="deleteCaseBtn">⌫ Elimina caso</button></div></div>
@@ -1175,7 +1225,7 @@ document.getElementById('app').innerHTML=`<div class="case-navbar"><button class
 </main>
 
 <aside class="case-final-rail"><section class="card score-card"><h3 class="section-title">Punteggio</h3><div class="score-total"><div><div class="muted">PUNTEGGIO</div><strong>${total(c)}</strong></div><div style="text-align:right"><div class="muted">AGE</div><b style="font-size:16px;color:#8a5b00">${agePts} mesi</b></div></div><div class="score-list"><div class="score-row"><span>Frequenza${c.frequencyCases!==null&&c.frequencyCases!==undefined?' ('+c.frequencyCases+' casi)':''}</span><b>${c.frequencyScoreStored??freqScore(c.frequencyCases)}</b></div><div class="score-row"><span>Sicurezza</span><b>${c.safety||0}</b></div><div class="score-row"><span>Sales deterrent</span><b>${c.sales||0}</b></div><div class="score-row"><span>Costi garanzia${c.warrantyCost!==null&&c.warrantyCost!==undefined?' (€ '+Number(c.warrantyCost||0).toLocaleString('it-IT')+')':''}</span><b>${c.warrantyScoreStored??warrantyScore(c.warrantyCost)}</b></div><div class="score-row"><span>Urgenza</span><b>${c.urgency||0}</b></div><div class="score-row age-score-row"><span>AGE / Anzianità${c.status==='closed'?' (congelata)':' — +1/mese'}</span><b>${agePts}</b></div><div class="score-row"><span>Bonus manuale</span><b>+${c.bonus||0}</b></div></div>${c.bonusReason?`<div class="bonus-note">${esc(c.bonusReason)}</div>`:''}</section>
-<section class="card case-attachments-hub"><h3 class="section-title">Allegati</h3>${railSection('Anomalia',atts,'anomaly','anomaly')}${railSection('Azione corrente',actionAtt,latestActionUpdate?'update:'+latestActionUpdate.id:'update','update',latestActionUpdate?.id||'')}${railSection('Soluzione',solAtt,'solution','solution')}</section></aside>
+<section class="card case-attachments-hub"><h3 class="section-title">Allegati</h3>${railSection('Descrizione',atts,'anomaly','anomaly')}${railSection('Azione corrente',actionAtt,latestActionUpdate?'update:'+latestActionUpdate.id:'update','update',latestActionUpdate?.id||'')}${railSection('Soluzione',solAtt,'solution','solution')}</section></aside>
 </div>`;
 document.getElementById('backBtn').onclick=()=>{currentCaseId=null;render()};document.getElementById('prevCaseBtn').onclick=()=>navigateCase(nav.prev);document.getElementById('nextCaseBtn').onclick=()=>navigateCase(nav.next);document.getElementById('agendaCaseBtn').onclick=()=>toggleAgenda(c.id,!state.agendaIds.includes(c.id));document.getElementById('editCaseBtn').onclick=()=>openEditCase(c);document.getElementById('updateBtn').onclick=()=>openUpdate(c);document.getElementById('solutionBtn').onclick=()=>openSolution(c);document.getElementById('attachmentsSummaryBtn').onclick=()=>openAttachmentSummary(c);document.getElementById('editCurrentActionBtn').onclick=()=>openEditCurrentAction(c);document.getElementById('deleteCaseBtn').onclick=()=>moveToTrash(c.id);document.getElementById('deleteCaseBottom').onclick=()=>moveToTrash(c.id);document.getElementById('changeCoverBtn').onclick=()=>openCoverPicker(c);if(document.getElementById('removeCoverBtn'))document.getElementById('removeCoverBtn').onclick=()=>setCover(c,null);bindAttachmentButtons();bindThumbLightboxes(document.getElementById('app'));bindDropZones(document.getElementById('app'));document.querySelectorAll('.edit-history-note').forEach(b=>b.onclick=()=>{const u=(c.updates||[]).find(x=>String(x.id)===String(b.dataset.updateId));if(u)openEditHistoricalUpdate(c,u)});}
 
