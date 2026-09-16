@@ -1385,12 +1385,20 @@ document.getElementById('app').innerHTML=`<div class="case-navbar"><button class
 <aside class="v19-solution-rail"><section class="card case-attachments-hub"><h3 class="section-title">Allegati soluzione</h3>${railSection('Soluzione',solAtt,'solution','solution')}</section></aside>
 <section class="case-history-sync"><div class="case-history-sync-title"><span>Storico riunioni</span></div>${renderHistorySynchronized(c)}</section>
 </div>`;
-document.getElementById('backBtn').onclick=()=>{currentCaseId=null;render()};document.getElementById('prevCaseBtn').onclick=()=>navigateCase(nav.prev);document.getElementById('nextCaseBtn').onclick=()=>navigateCase(nav.next);document.getElementById('agendaCaseBtn').onclick=()=>toggleAgenda(c.id,!state.agendaIds.includes(c.id));document.getElementById('editCaseBtn').onclick=()=>openEditCase(c);document.getElementById('editPartsBtn')?.addEventListener('click',()=>openEditParts(c));document.getElementById('updateBtn').onclick=()=>openUpdate(c);document.getElementById('solutionBtn').onclick=()=>openSolution(c);document.getElementById('attachmentsSummaryBtn').onclick=()=>openAttachmentSummary(c);document.getElementById('editCurrentActionBtn').onclick=()=>openEditCurrentAction(c);document.getElementById('editScoreBtn')?.addEventListener('click',()=>openEditScore(c));const actionFileBtn=document.getElementById('addActionFileBtn'),actionFileInput=document.getElementById('actionFileInput');if(actionFileBtn&&actionFileInput){actionFileBtn.onclick=()=>actionFileInput.click();actionFileInput.onchange=()=>uploadCurrentActionFiles(c,actionFileInput.files)}document.getElementById('deleteCaseBtn').onclick=()=>moveToTrash(c.id);document.getElementById('changeCoverBtn').onclick=()=>openCoverPicker(c);if(document.getElementById('removeCoverBtn'))document.getElementById('removeCoverBtn').onclick=()=>setCover(c,null);bindAttachmentButtons();bindThumbLightboxes(document.getElementById('app'));bindDropZones(document.getElementById('app'));document.querySelectorAll('.edit-history-note').forEach(b=>b.onclick=()=>{const u=(c.updates||[]).find(x=>String(x.id)===String(b.dataset.updateId));if(u)openEditHistoricalUpdate(c,u)});document.querySelectorAll('.delete-history-note').forEach(b=>b.onclick=()=>{const u=(c.updates||[]).find(x=>String(x.id)===String(b.dataset.updateId));if(u)deleteHistoricalUpdate(c,u)});}
+document.getElementById('backBtn').onclick=()=>{currentCaseId=null;render()};document.getElementById('prevCaseBtn').onclick=()=>navigateCase(nav.prev);document.getElementById('nextCaseBtn').onclick=()=>navigateCase(nav.next);document.getElementById('agendaCaseBtn').onclick=()=>toggleAgenda(c.id,!state.agendaIds.includes(c.id));document.getElementById('editCaseBtn').onclick=()=>openEditCase(c);document.getElementById('editPartsBtn')?.addEventListener('click',()=>openEditParts(c));document.getElementById('updateBtn').onclick=()=>openUpdate(c);document.getElementById('solutionBtn').onclick=()=>openSolution(c);document.getElementById('attachmentsSummaryBtn').onclick=()=>openAttachmentSummary(c);document.getElementById('editCurrentActionBtn').onclick=()=>openEditCurrentAction(c);document.getElementById('editScoreBtn')?.addEventListener('click',()=>openEditScore(c));const actionFileBtn=document.getElementById('addActionFileBtn'),actionFileInput=document.getElementById('actionFileInput');if(actionFileBtn&&actionFileInput){actionFileBtn.onclick=()=>actionFileInput.click();actionFileInput.onchange=()=>uploadCurrentActionFiles(c,actionFileInput.files)}document.getElementById('deleteCaseBtn').onclick=()=>moveToTrash(c.id);document.getElementById('changeCoverBtn').onclick=()=>openCoverPicker(c);if(document.getElementById('removeCoverBtn'))document.getElementById('removeCoverBtn').onclick=()=>setCover(c,null);bindAttachmentButtons();bindThumbLightboxes(document.getElementById('app'));bindDropZones(document.getElementById('app'));document.querySelectorAll('.edit-history-note').forEach(b=>b.onclick=()=>{const u=(c.updates||[]).find(x=>String(x.id)===String(b.dataset.updateId));if(u)openEditHistoricalUpdate(c,u)});document.querySelectorAll('.edit-history-parts').forEach(b=>b.onclick=()=>{const u=(c.updates||[]).find(x=>String(x.id)===String(b.dataset.updateId));if(u)openEditHistoricalParts(c,u)});document.querySelectorAll('.delete-history-note').forEach(b=>b.onclick=()=>{const u=(c.updates||[]).find(x=>String(x.id)===String(b.dataset.updateId));if(u)deleteHistoricalUpdate(c,u)});}
+
+function renderHistoricalPartsInline(x){
+  const parts=x.parts||[];
+  if(!parts.length){
+    return `<div style="margin-top:12px"><button class="btn btn-soft btn-sm edit-history-parts" data-update-id="${esc(x.id)}" type="button">＋ Aggiungi ricambi</button></div>`;
+  }
+  return `<div style="margin-top:12px"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px"><b>Ricambi</b><button class="btn btn-ghost btn-sm edit-history-parts" data-update-id="${esc(x.id)}" type="button">✎ Modifica ricambi</button></div><table class="parts-table"><thead><tr><th>Part Number</th><th>Descrizione</th></tr></thead><tbody>${parts.map(p=>`<tr><td>${esc(p.pn||'—')}</td><td>${esc(p.desc||'—')}</td></tr>`).join('')}</tbody></table></div>`;
+}
 
 function renderHistorySynchronized(c){
   const u=[...(c.updates||[])].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
   if(!u.length)return '<div class="card empty">Nessuna riunione registrata.</div>';
-  return u.map((x,i)=>`<div class="history-sync-row"><article class="history-sync-note"><div class="history-sync-note-head"><div class="history-sync-note-date">• ${fmtDate(x.date)}</div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="tag">${esc(x.status||'Aggiornamento')}</span><button class="btn btn-ghost btn-sm edit-history-note" data-update-id="${esc(x.id)}" type="button">✎ Modifica nota</button><button class="btn btn-danger btn-sm delete-history-note" data-update-id="${esc(x.id)}" type="button">⌫ Elimina nota</button></div></div><div class="history-sync-note-text">${esc(x.text||'')}</div>${x.action||x.owner||x.due?`<div class="timeline-extra"><div class="timeline-box"><b>Azione decisa</b>${esc(x.action||'—')}</div><div class="timeline-box"><b>Responsabile</b>${esc(x.owner||'—')}</div><div class="timeline-box"><b>Scadenza</b>${fmtDate(x.due)}</div></div>`:''}${renderParts(x.parts||[],true)}</article><aside class="history-sync-attachments"><div class="history-sync-attachments-head"><b>Allegati nota</b><button class="btn btn-soft btn-sm add-external-link" data-section="update" data-update-id="${esc(x.id)}" type="button">+ Link</button></div>${(x.attachments||[]).length?renderAttachments(x.attachments||[],'update:'+x.id,c.id):'<div class="history-sync-empty">Nessun allegato.</div>'}${dropZoneHtml('update',c.id,x.id)}</aside></div>`).join('');
+  return u.map((x,i)=>`<div class="history-sync-row"><article class="history-sync-note"><div class="history-sync-note-head"><div class="history-sync-note-date">• ${fmtDate(x.date)}</div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="tag">${esc(x.status||'Aggiornamento')}</span><button class="btn btn-ghost btn-sm edit-history-note" data-update-id="${esc(x.id)}" type="button">✎ Modifica nota</button><button class="btn btn-danger btn-sm delete-history-note" data-update-id="${esc(x.id)}" type="button">⌫ Elimina nota</button></div></div><div class="history-sync-note-text">${esc(x.text||'')}</div>${x.action||x.owner||x.due?`<div class="timeline-extra"><div class="timeline-box"><b>Azione decisa</b>${esc(x.action||'—')}</div><div class="timeline-box"><b>Responsabile</b>${esc(x.owner||'—')}</div><div class="timeline-box"><b>Scadenza</b>${fmtDate(x.due)}</div></div>`:''}${renderHistoricalPartsInline(x)}</article><aside class="history-sync-attachments"><div class="history-sync-attachments-head"><b>Allegati nota</b><button class="btn btn-soft btn-sm add-external-link" data-section="update" data-update-id="${esc(x.id)}" type="button">+ Link</button></div>${(x.attachments||[]).length?renderAttachments(x.attachments||[],'update:'+x.id,c.id):'<div class="history-sync-empty">Nessun allegato.</div>'}${dropZoneHtml('update',c.id,x.id)}</aside></div>`).join('');
 }
 
 function renderPartsCompact(parts=[]){if(!parts.length)return '<div class="parts-empty">—</div>';return `<table class="parts-table"><thead><tr><th>Part Number</th><th>Descrizione</th></tr></thead><tbody>${parts.map(p=>`<tr><td>${esc(p.pn||'—')}</td><td>${esc(p.desc||'—')}</td></tr>`).join('')}</tbody></table>`}
@@ -1763,6 +1771,36 @@ async function deleteHistoricalUpdate(c,u){
     renderCase(c.id);
     toast('Nota storica eliminata');
   }catch(e){alert('Errore eliminazione nota storica: '+e.message)}
+}
+
+function addHistoricalPartRow(containerId,p={}){
+  const d=document.createElement('div');
+  d.className='inline-row';
+  d.dataset.qty=String(Number(p.qty)||1);
+  d.innerHTML=`<input placeholder="Part Number" class="pn" value="${esc(p.pn||'')}"><input placeholder="Descrizione" class="desc" value="${esc(p.desc||'')}"><button type="button" class="btn btn-danger btn-sm">×</button>`;
+  d.querySelector('button').onclick=()=>d.remove();
+  document.getElementById(containerId).appendChild(d);
+}
+function collectHistoricalParts(containerId){
+  return [...document.getElementById(containerId).children].map(r=>({pn:r.querySelector('.pn').value.trim(),desc:r.querySelector('.desc').value.trim(),qty:Number(r.dataset.qty)||1})).filter(p=>p.pn||p.desc);
+}
+function openEditHistoricalParts(c,u){
+  const body=`<div class="form-section" style="margin-top:0"><div class="form-title">Ricambi nota storica</div><div class="hint" style="margin-bottom:10px">Inserisci Part Number e descrizione. Usa il pulsante + per aggiungere altri ricambi.</div><div id="historyPartsEditor"></div><button type="button" class="btn btn-soft btn-sm" id="addHistoryPartBtn">+ Aggiungi ricambio</button></div>`;
+  openModal((u.parts||[]).length?'Modifica ricambi nota':'Aggiungi ricambi',body,async close=>{
+    const parts=collectHistoricalParts('historyPartsEditor');
+    const ownsCurrentAction=String(u.action||'').trim()===String(c.currentAction?.text||'').trim()&&String(u.owner||'')===String(c.currentAction?.owner||'')&&String(u.due||'')===String(c.currentAction?.due||'')&&String(u.status||'')===String(c.currentAction?.status||'');
+    const payload={meeting_date:u.date||null,update_text:u.text||'',action_text:u.action||'',action_owner:u.owner||'',action_due:u.due||null,action_status:u.status||'',update_current_action:ownsCurrentAction,parts:apiParts(parts,true)};
+    try{
+      const raw=await api('/api/cases/'+encodeURIComponent(c.id)+'/updates/'+encodeURIComponent(u.id),{method:'PUT',body:JSON.stringify(payload)});
+      const mapped=mapCase(raw);
+      const i=state.cases.findIndex(x=>String(x.id)===String(c.id));
+      if(i>=0)state.cases[i]=mapped;
+      save();close();renderCase(c.id);toast(parts.length?'Ricambi nota aggiornati':'Ricambi nota rimossi');
+    }catch(e){alert('Errore aggiornamento ricambi nota: '+e.message)}
+  });
+  (u.parts||[]).forEach(p=>addHistoricalPartRow('historyPartsEditor',p));
+  if(!(u.parts||[]).length)addHistoricalPartRow('historyPartsEditor');
+  document.getElementById('addHistoryPartBtn').onclick=()=>addHistoricalPartRow('historyPartsEditor');
 }
 
 function openEditHistoricalUpdate(c,u){
