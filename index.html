@@ -1460,32 +1460,76 @@ const imgs=[];const push=(a,section,label,date)=>{if(a&&a.dataUrl&&String(a.type
 (c.attachments||[]).forEach(a=>push(a,'ANOMALIA','',c.date));(c.updates||[]).forEach(u=>(u.attachments||[]).forEach(a=>push(a,'RIUNIONE',u.text||'',u.date)));(c.solution?.attachments||[]).forEach(a=>push(a,'SOLUZIONE','',c.solution?.date||''));return imgs;
 }
 function historyChunks(c,maxPerSlide=5){const hist=(c.updates||[]).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));const chunks=[];for(let i=0;i<hist.length;i+=maxPerSlide)chunks.push(hist.slice(i,i+maxPerSlide));return chunks}
+function pptLogo(slide,cover=false){
+const blue='0B4F8A';
+if(cover){
+  slide.addShape(pptx.ShapeType.rect,{x:.65,y:.55,w:.58,h:.42,fill:{color:'FFFFFF'},line:{color:'FFFFFF'}});
+  slide.addText('M',{x:.73,y:.60,w:.42,h:.28,fontFace:'Aptos Display',fontSize:17,bold:true,color:blue,align:'center',margin:0});
+  slide.addText('MENARINI',{x:1.35,y:.56,w:2.75,h:.36,fontFace:'Aptos Display',fontSize:22,bold:true,color:'FFFFFF',margin:0});
+}else{
+  slide.addShape(pptx.ShapeType.rect,{x:.45,y:.18,w:12.45,h:.42,fill:{color:blue},line:{color:blue}});
+  slide.addShape(pptx.ShapeType.rect,{x:.65,y:.25,w:.36,h:.24,fill:{color:'FFFFFF'},line:{color:'FFFFFF'}});
+  slide.addText('M',{x:.70,y:.27,w:.26,h:.18,fontFace:'Aptos Display',fontSize:10,bold:true,color:blue,align:'center',margin:0});
+  slide.addText('MENARINI  |  FAILURE ANALYSIS',{x:1.12,y:.23,w:6.4,h:.25,fontFace:'Aptos',fontSize:12,bold:true,color:'FFFFFF',margin:0});
+}
+}
 function addPptHeader(slide,title,dateText,page,cover=false){
 slide.background={color:cover?'0B4F8A':'F7F9FC'};
-if(cover){slide.addText('MENARINI',{x:.65,y:.55,w:3.0,h:.45,fontFace:'Aptos Display',fontSize:25,bold:true,color:'FFFFFF',margin:0});slide.addText(title,{x:.65,y:2.55,w:11.7,h:.75,fontFace:'Aptos Display',fontSize:34,bold:true,color:'FFFFFF',margin:0,fit:'shrink'});slide.addText(dateText,{x:.72,y:6.92,w:2.3,h:.25,fontFace:'Aptos',fontSize:11,color:'FFFFFF',margin:0});return}
-slide.addText('MENARINI  |  FAILURE ANALYSIS',{x:.45,y:.18,w:12.2,h:.36,fontFace:'Aptos',fontSize:13,bold:true,color:'FFFFFF',fill:{color:'0B4F8A'},margin:.08});
-slide.addText(title,{x:.7,y:.72,w:11.7,h:.46,fontFace:'Aptos Display',fontSize:21,bold:true,color:'19324D',margin:0,fit:'shrink'});
+pptLogo(slide,cover);
+if(cover){slide.addText(title,{x:.65,y:2.55,w:11.7,h:.75,fontFace:'Aptos Display',fontSize:34,bold:true,color:'FFFFFF',margin:0,fit:'shrink'});slide.addText(dateText,{x:.72,y:6.92,w:2.3,h:.25,fontFace:'Aptos',fontSize:11,color:'FFFFFF',margin:0});return}
+slide.addText(title,{x:.7,y:.82,w:11.7,h:.46,fontFace:'Aptos Display',fontSize:21,bold:true,color:'19324D',margin:0,fit:'shrink'});
 slide.addText(dateText,{x:.72,y:6.92,w:2.2,h:.22,fontFace:'Aptos',fontSize:9.5,color:'7C8793',margin:0});if(page!==undefined)slide.addText(String(page),{x:12.35,y:6.92,w:.35,h:.22,fontFace:'Aptos',fontSize:9.5,color:'7C8793',align:'center',margin:0});
 }
+function ensureExportOverlay(){let o=document.getElementById('pptExportOverlay');if(o)return o;o=document.createElement('div');o.id='pptExportOverlay';o.style.cssText='position:fixed;inset:0;background:rgba(10,31,51,.32);z-index:99999;display:none;align-items:center;justify-content:center';o.innerHTML='<div style="background:#fff;border-radius:14px;box-shadow:0 18px 60px rgba(0,0,0,.22);padding:22px 26px;min-width:330px;border:1px solid #d7e2ee"><div style="font-weight:900;font-size:18px;color:#10263d;margin-bottom:8px">Preparazione presentazione in corso…</div><div style="color:#536273;font-size:14px;line-height:1.4">Attendi la generazione del PowerPoint. Non cliccare di nuovo: il file verrà scaricato appena pronto.</div></div>';document.body.appendChild(o);return o}
+function setPptExportBusy(on,msg='Preparazione presentazione in corso…'){window.__pptExportBusy=!!on;const o=ensureExportOverlay();o.style.display=on?'flex':'none';const t=o.querySelector('div div');if(t)t.textContent=msg;document.querySelectorAll('#exportAgendaBtn,.export-meeting-ppt').forEach(b=>{b.disabled=!!on;b.style.opacity=on?.65:1;b.style.cursor=on?'wait':''});}
+function attachmentLooksImage(a){const n=String(a?.name||a?.file_name||'').toLowerCase(),t=String(a?.type||a?.mime_type||'').toLowerCase();return t.startsWith('image/')||/\.(png|jpe?g|jfif|bmp|gif|webp|tiff?)$/i.test(n)}
+const PPT_IMG_CACHE=new Map();
+async function imageDataForPpt(a){
+ if(!a||!attachmentLooksImage(a))return null;
+ const key=String(a.id||a.dataUrl||a.name||Math.random()); if(PPT_IMG_CACHE.has(key))return PPT_IMG_CACHE.get(key);
+ const src=a.dataUrl||a.public_url||a.url||''; if(!src)return null;
+ const p=(async()=>{try{if(/^data:image\//i.test(src))return src;const res=await fetch(src,{cache:'no-store'});if(!res.ok)return null;const blob=await res.blob();if(!String(blob.type||'').startsWith('image/')&&!attachmentLooksImage(a))return null;return await new Promise(resolve=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>resolve(null);r.readAsDataURL(blob)});}catch(e){console.warn('Immagine PPT non leggibile',a?.name,e);return null}})();
+ PPT_IMG_CACHE.set(key,p);return p;
+}
+async function buildCaseImagesForPpt(c){
+ const raw=[];const push=(a,section,label,date,rank=9)=>{if(a&&attachmentLooksImage(a))raw.push({att:a,id:String(a.id||''),section,label:label||'',date:date||'',rank,name:a.name||a.file_name||''})};
+ (c.attachments||[]).forEach(a=>push(a,'ANOMALIA','',c.date,1));
+ (c.updates||[]).forEach(u=>(u.attachments||[]).forEach(a=>push(a,'RIUNIONE',u.text||'',u.date,2)));
+ (c.solution?.attachments||[]).forEach(a=>push(a,'SOLUZIONE','',c.solution?.date||'',3));
+ const seen=new Set(),items=[];for(const x of raw){const k=x.id||`${x.section}|${x.date}|${x.name}`;if(seen.has(k))continue;seen.add(k);const dataUrl=await imageDataForPpt(x.att);if(dataUrl)items.push({...x,dataUrl});}
+ let cover=null;if(c.coverAttachmentId)cover=items.find(x=>x.id&&x.id===String(c.coverAttachmentId));if(!cover)cover=items.find(x=>x.section==='ANOMALIA')||items[0]||null;
+ const gallery=items.filter(x=>!cover||x.id!==cover.id||!x.id).filter((x,i,arr)=>!cover || x!==cover);
+ return {cover,gallery,all:items};
+}
+function historyPagesForPpt(c){
+ const hist=(c.updates||[]).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+ const pages=[];let page=[];let used=0;
+ for(const u of hist){const len=pptText(u.text).length;let units=1.0+Math.ceil(len/310)*.55+(u.action?.trim()?0.35:0);if(len>760)units=5.2;if(used+units>5.0&&page.length){pages.push(page);page=[];used=0}page.push({...u,__units:units});used+=units;if(len>760){pages.push(page);page=[];used=0}}
+ if(page.length)pages.push(page);return pages;
+}
 async function exportAgendaPptx(cases,dateOverride){
+if(window.__pptExportBusy)return;
 if(!cases||!cases.length){alert('L’agenda non contiene casi da esportare.');return}
 if(typeof PptxGenJS==='undefined'){alert('Il modulo PowerPoint non è stato caricato. Verifica la connessione Internet e riprova.');return}
+setPptExportBusy(true,'Preparazione presentazione in corso…');
 try{
-const pptx=new PptxGenJS();pptx.layout='LAYOUT_WIDE';pptx.author='MENARINI';pptx.subject='Failure Analysis';pptx.title='Failure Analysis';pptx.company='MENARINI';pptx.lang='it-IT';
+const pptx=new PptxGenJS();pptx.layout='LAYOUT_WIDE';pptx.author='MENARINI';pptx.subject='Failure Analysis';pptx.title='Failure Analysis';pptx.company='MENARINI';pptx.lang='it-IT';pptx.theme={headFontFace:'Aptos Display',bodyFontFace:'Aptos',lang:'it-IT'};
 const d=dateOverride||localDateISO(),dIt=fmtDate(d);let slide=pptx.addSlide();addPptHeader(slide,'FAILURE ANALYSIS',dIt,undefined,true);let page=2;
 for(let idx=0;idx<cases.length;idx++){
-const c=cases[idx],imgs=allCaseImagesForPpt(c);
+setPptExportBusy(true,`Preparazione presentazione in corso… (${idx+1}/${cases.length})`);
+const c=cases[idx],imgPack=await buildCaseImagesForPpt(c),cover=imgPack.cover,gallery=imgPack.gallery;
 slide=pptx.addSlide();addPptHeader(slide,`Scheda ${pptText(c.sheet)} — ${pptText(c.title)}`,dIt,page++);
-slide.addText(`Priorità ${idx+1}   |   Punteggio ${total(c)}   |   ${statusLabel(c.status)}`,{x:.7,y:1.24,w:7.4,h:.28,fontFace:'Aptos',fontSize:11,bold:true,color:'0B4F8A',margin:0});
-const models=pptText((c.models||[]).join(', '));slide.addText('ANOMALIA',{x:.7,y:1.60,w:2.2,h:.28,fontFace:'Aptos',fontSize:13,bold:true,color:'0B4F8A',margin:0});slide.addText(pptText(c.description||c.title),{x:.7,y:1.94,w:7.25,h:1.12,fontFace:'Aptos',fontSize:12.5,color:'263746',valign:'top',margin:.03,fit:'shrink'});slide.addText(`Modelli: ${models||'—'}\nEnte: ${pptText(c.entity)||'—'}`,{x:.7,y:3.10,w:7.25,h:.54,fontFace:'Aptos',fontSize:10.5,color:'526273',margin:.02,fit:'shrink'});
-slide.addText('AZIONE CORRENTE',{x:.7,y:3.76,w:2.4,h:.28,fontFace:'Aptos',fontSize:13,bold:true,color:'0B4F8A',margin:0});slide.addText(pptText(c.currentAction?.text)||'—',{x:.7,y:4.08,w:7.25,h:.68,fontFace:'Aptos',fontSize:11.5,color:'263746',margin:.03,fit:'shrink'});const owner=pptText(c.currentAction?.owner)||'—',due=c.currentAction?.due?fmtDate(c.currentAction.due):'—',ast=pptText(c.currentAction?.status)||'—';slide.addText(`Responsabile: ${owner}   |   Scadenza: ${due}   |   Stato: ${ast}`,{x:.7,y:4.78,w:7.25,h:.28,fontFace:'Aptos',fontSize:9.5,color:'526273',margin:0});
-slide.addText('SOLUZIONE',{x:.7,y:5.14,w:2.0,h:.25,fontFace:'Aptos',fontSize:12,bold:true,color:'0B4F8A',margin:0});slide.addText(pptText(c.solution?.text)||'—',{x:.7,y:5.42,w:7.25,h:.62,fontFace:'Aptos',fontSize:10.5,color:'263746',margin:.02,fit:'shrink'});if(c.solution?.cid||c.solution?.cutIn)slide.addText(`CID: ${pptText(c.solution?.cid)||'—'}   |   CUT IN: ${pptText(c.solution?.cutIn)||'—'}`,{x:.7,y:6.08,w:7.25,h:.22,fontFace:'Aptos',fontSize:9.2,color:'526273',margin:0,fit:'shrink'});
-let shown=0;if(imgs[0]&&await addContain(slide,imgs[0].dataUrl,8.45,1.45,4.15,2.15))shown++;if(imgs[1]&&await addContain(slide,imgs[1].dataUrl,8.45,3.82,4.15,2.15))shown++;if(!shown)slide.addText('Nessuna immagine disponibile',{x:8.55,y:3.15,w:3.8,h:.45,fontFace:'Aptos',fontSize:11,italic:true,color:'8A96A3',align:'center',margin:0});
-const hchunks=historyChunks(c,5);for(let hi=0;hi<hchunks.length;hi++){slide=pptx.addSlide();addPptHeader(slide,`Scheda ${pptText(c.sheet)} — Storico riunioni${hchunks.length>1?` (${hi+1}/${hchunks.length})`:''}`,dIt,page++);let y=1.40;for(const u of hchunks[hi]){slide.addText(u.date?fmtDate(u.date):'Data non disponibile',{x:.78,y,w:1.65,h:.28,fontFace:'Aptos',fontSize:11,bold:true,color:'0B4F8A',margin:0});slide.addText(pptText(u.text)||'—',{x:2.55,y:y-.02,w:9.6,h:.58,fontFace:'Aptos',fontSize:11,color:'263746',margin:.02,fit:'shrink'});if(u.action)slide.addText(`Azione: ${pptText(u.action)}${u.owner?`  |  Resp.: ${pptText(u.owner)}`:''}${u.due?`  |  Scad.: ${fmtDate(u.due)}`:''}`,{x:2.55,y:y+.55,w:9.6,h:.28,fontFace:'Aptos',fontSize:9.5,color:'526273',margin:0,fit:'shrink'});y+=1.06}}
-if(imgs.length){for(let ii=0;ii<imgs.length;ii+=4){const chunk=imgs.slice(ii,ii+4);slide=pptx.addSlide();addPptHeader(slide,`Scheda ${pptText(c.sheet)} — Immagini${imgs.length>4?` (${Math.floor(ii/4)+1}/${Math.ceil(imgs.length/4)})`:''}`,dIt,page++);const boxes=[{x:.75,y:1.35,w:5.8,h:2.35},{x:6.8,y:1.35,w:5.8,h:2.35},{x:.75,y:4.05,w:5.8,h:2.35},{x:6.8,y:4.05,w:5.8,h:2.35}];for(let j=0;j<chunk.length;j++){const im=chunk[j],b=boxes[j];await addContain(slide,im.dataUrl,b.x,b.y,b.w,b.h-.32);const cap=`${im.section}${im.date?` — ${fmtDate(im.date)}`:''}${im.name?` — ${pptText(im.name)}`:''}`;slide.addText(cap,{x:b.x,y:b.y+b.h-.28,w:b.w,h:.22,fontFace:'Aptos',fontSize:8.5,color:'526273',align:'center',margin:0,fit:'shrink'})}}}
+slide.addText(`Priorità ${idx+1}   |   Punteggio ${total(c)}   |   ${statusLabel(c.status)}`,{x:.7,y:1.36,w:7.4,h:.28,fontFace:'Aptos',fontSize:11,bold:true,color:'0B4F8A',margin:0});
+const models=pptText((c.models||[]).join(', '));slide.addText('ANOMALIA',{x:.7,y:1.72,w:2.2,h:.28,fontFace:'Aptos',fontSize:13,bold:true,color:'0B4F8A',margin:0});slide.addText(pptText(c.description||c.title),{x:.7,y:2.04,w:7.15,h:1.04,fontFace:'Aptos',fontSize:12.2,color:'263746',valign:'top',margin:.03,fit:'shrink'});slide.addText(`Modelli: ${models||'—'}\nEnte: ${pptText(c.entity)||'—'}`,{x:.7,y:3.18,w:7.15,h:.54,fontFace:'Aptos',fontSize:10.2,color:'526273',margin:.02,fit:'shrink'});
+slide.addText('AZIONE CORRENTE',{x:.7,y:3.84,w:2.4,h:.28,fontFace:'Aptos',fontSize:13,bold:true,color:'0B4F8A',margin:0});slide.addText(pptText(c.currentAction?.text)||'—',{x:.7,y:4.16,w:7.15,h:.62,fontFace:'Aptos',fontSize:11.0,color:'263746',margin:.03,fit:'shrink'});const owner=pptText(c.currentAction?.owner)||'—',due=c.currentAction?.due?fmtDate(c.currentAction.due):'—',ast=pptText(c.currentAction?.status)||'—';slide.addText(`Responsabile: ${owner}   |   Scadenza: ${due}   |   Stato: ${ast}`,{x:.7,y:4.82,w:7.15,h:.25,fontFace:'Aptos',fontSize:9.2,color:'526273',margin:0,fit:'shrink'});
+slide.addText('SOLUZIONE',{x:.7,y:5.18,w:2.0,h:.25,fontFace:'Aptos',fontSize:12,bold:true,color:'0B4F8A',margin:0});slide.addText(pptText(c.solution?.text)||'—',{x:.7,y:5.46,w:7.15,h:.56,fontFace:'Aptos',fontSize:10.2,color:'263746',margin:.02,fit:'shrink'});if(c.solution?.cid||c.solution?.cutIn)slide.addText(`CID: ${pptText(c.solution?.cid)||'—'}   |   CUT IN: ${pptText(c.solution?.cutIn)||'—'}`,{x:.7,y:6.08,w:7.15,h:.22,fontFace:'Aptos',fontSize:9.0,color:'526273',margin:0,fit:'shrink'});
+if(cover){await addContain(slide,cover.dataUrl,8.35,1.36,4.35,3.25);slide.addText(`${cover.section}${cover.date?` — ${fmtDate(cover.date)}`:''}${cover.name?` — ${pptText(cover.name)}`:''}`,{x:8.35,y:4.68,w:4.35,h:.28,fontFace:'Aptos',fontSize:8.5,color:'526273',align:'center',margin:0,fit:'shrink'});}else{slide.addText('Nessuna immagine disponibile',{x:8.55,y:3.05,w:3.8,h:.45,fontFace:'Aptos',fontSize:11,italic:true,color:'8A96A3',align:'center',margin:0});}
+const hpages=historyPagesForPpt(c);for(let hi=0;hi<hpages.length;hi++){slide=pptx.addSlide();addPptHeader(slide,`Scheda ${pptText(c.sheet)} — Storico riunioni${hpages.length>1?` (${hi+1}/${hpages.length})`:''}`,dIt,page++);let y=1.58;for(const u of hpages[hi]){const text=pptText(u.text)||'—';const h=Math.min(4.8,Math.max(.62,0.48+Math.ceil(text.length/310)*.34));slide.addText(u.date?fmtDate(u.date):'Data non disponibile',{x:.78,y,w:1.65,h:.28,fontFace:'Aptos',fontSize:10.8,bold:true,color:'0B4F8A',margin:0});slide.addText(text,{x:2.55,y:y-.02,w:9.6,h, fontFace:'Aptos',fontSize:10.7,color:'263746',margin:.02,fit:'shrink'});if(u.action)slide.addText(`Azione: ${pptText(u.action)}${u.owner?`  |  Resp.: ${pptText(u.owner)}`:''}${u.due?`  |  Scad.: ${fmtDate(u.due)}`:''}`,{x:2.55,y:y+h+.04,w:9.6,h:.25,fontFace:'Aptos',fontSize:9.2,color:'526273',margin:0,fit:'shrink'});y+=h+(u.action?.trim()?.36:.16)+.30;}}
+if(gallery.length){for(let ii=0;ii<gallery.length;ii+=4){const chunk=gallery.slice(ii,ii+4);slide=pptx.addSlide();addPptHeader(slide,`Scheda ${pptText(c.sheet)} — Immagini note e allegati${gallery.length>4?` (${Math.floor(ii/4)+1}/${Math.ceil(gallery.length/4)})`:''}`,dIt,page++);const boxes=[{x:.75,y:1.42,w:5.8,h:2.25},{x:6.8,y:1.42,w:5.8,h:2.25},{x:.75,y:4.05,w:5.8,h:2.25},{x:6.8,y:4.05,w:5.8,h:2.25}];for(let j=0;j<chunk.length;j++){const im=chunk[j],b=boxes[j];await addContain(slide,im.dataUrl,b.x,b.y,b.w,b.h-.32);const cap=`${im.section}${im.date?` — ${fmtDate(im.date)}`:''}${im.name?` — ${pptText(im.name)}`:''}`;slide.addText(cap,{x:b.x,y:b.y+b.h-.28,w:b.w,h:.22,fontFace:'Aptos',fontSize:8.5,color:'526273',align:'center',margin:0,fit:'shrink'})}}}
 }
 const file=`Failure_Analysis_${d.replaceAll('-','')}.pptx`;await pptx.writeFile({fileName:file});toast('PowerPoint esportato');
 }catch(e){console.error(e);alert('Errore esportazione PowerPoint: '+(e?.message||e))}
+finally{setPptExportBusy(false)}
 }
 
 async function deleteMeetingSnapshot(id){
