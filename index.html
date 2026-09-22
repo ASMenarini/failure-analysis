@@ -998,6 +998,19 @@ background:#c9d7e4;
 .cover-choice-pdf{height:120px;border-radius:8px;background:#fff4e5;border:1px solid #f1c27d;display:grid;place-items:center;color:#9a5b00;font-weight:900;font-size:24px}
 @media(max-width:700px){.case-thumb-pdf{width:64px;height:48px}}
 
+
+/* v20.9.5 — SOLO layout tabella Azioni aperte: evita eredita larghezze tabella principale */
+.actions-open-table{table-layout:fixed}
+.actions-open-table th:nth-child(1),.actions-open-table td:nth-child(1){width:92px}
+.actions-open-table th:nth-child(2),.actions-open-table td:nth-child(2){width:78px}
+.actions-open-table th:nth-child(3),.actions-open-table td:nth-child(3){width:24%}
+.actions-open-table th:nth-child(4),.actions-open-table td:nth-child(4){width:36%}
+.actions-open-table th:nth-child(5),.actions-open-table td:nth-child(5){width:130px}
+.actions-open-table th:nth-child(6),.actions-open-table td:nth-child(6){width:150px}
+.actions-open-table th:nth-child(7),.actions-open-table td:nth-child(7){width:125px}
+.actions-open-table td:nth-child(3),.actions-open-table td:nth-child(4){white-space:normal;overflow-wrap:anywhere}
+@media(max-width:1050px){.actions-open-table{min-width:1050px}}
+
 </style>
 <!-- v16.7.3 deep audit: new-case fix, action status preservation, safer action save, date validation -->
 </head>
@@ -1322,7 +1335,7 @@ function renderActions(){
  };
  document.getElementById('app').innerHTML=`<div class="page-head"><div><h1 class="page-title">Azioni aperte</h1><div class="sub">Azioni correnti ancora da completare, raggruppate per caso.</div></div></div>
  <div class="toolbar"><input id="actionSearch" placeholder="Cerca scheda, anomalia, azione, responsabile…"><select id="actionOwnerFilter"><option value="">Tutti i responsabili</option>${ENTITIES.map(e=>`<option>${esc(e)}</option>`).join('')}</select></div>
- <div class="table-card"><table class="table"><thead><tr><th>Immagine</th><th>Scheda</th><th>Anomalia</th><th>Azione corrente</th><th>Responsabile</th><th>Scadenza</th><th>Stato azione</th></tr></thead><tbody id="actionRows"></tbody></table></div>`;
+ <div class="table-card"><table class="table actions-open-table"><thead><tr><th>Immagine</th><th>Scheda</th><th>Anomalia</th><th>Azione corrente</th><th>Responsabile</th><th>Scadenza</th><th>Stato azione</th></tr></thead><tbody id="actionRows"></tbody></table></div>`;
  const draw=()=>{
   const q=document.getElementById('actionSearch').value.trim().toLowerCase();
   const owner=document.getElementById('actionOwnerFilter').value;
