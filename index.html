@@ -1246,7 +1246,22 @@ function isPdfAttachment(a){const n=String(a?.name||'').toLowerCase(),t=String(a
 function allCaseImages(c){const out=[];const add=(arr,source)=>{(arr||[]).forEach(a=>{if(isImageAttachment(a))out.push({...a,source})})};add(c.attachments,'DESCRIZIONE');add(c.solution?.attachments,'SOLUZIONE');(c.updates||[]).forEach(u=>add(u.attachments,`RIUNIONE ${fmtDate(u.date)}`));return out}
 function allCaseCoverCandidates(c){const out=[];const add=(arr,source)=>{(arr||[]).forEach(a=>{if(isImageAttachment(a)||isPdfAttachment(a))out.push({...a,source})})};add(c.attachments,'DESCRIZIONE');add(c.solution?.attachments,'SOLUZIONE');(c.updates||[]).forEach(u=>add(u.attachments,`RIUNIONE ${fmtDate(u.date)}`));return out}
 function coverAttachment(c){const candidates=allCaseCoverCandidates(c);const chosen=candidates.find(a=>String(a.id)===String(c.coverAttachmentId));if(chosen)return chosen;return candidates.find(a=>isImageAttachment(a))||candidates[0]||null}
-function renderCaseThumb(c){const a=coverAttachment(c);if(!a)return `<div class="case-thumb-placeholder">NESSUNA<br>COPERTINA</div>`;if(isPdfAttachment(a))return `<div class="case-thumb-pdf" title="Copertina PDF: ${esc(a.name)}">PDF</div>`;return `<img class="case-thumb js-lightbox-thumb hover-preview-source" data-case-id="${c.id}" data-image-id="${a.id}" data-preview-src="${a.dataUrl}" src="${a.dataUrl}" alt="Copertina ${esc(c.sheet)}" title="Ingrandisci copertina">`}
+function renderCaseThumb(c){const a=coverAttachment(c);if(!a)return `<div class="case-thumb-placeholder">NESSUNA<br>COPERTINA</div>`;if(isPdfAttachment(a))return `<img class="case-thumb case-thumb-pdf-preview" data-case-id="${esc(c.id)}" data-pdf-cover-id="${esc(a.id)}" alt="Copertina PDF ${esc(c.sheet)}" title="Anteprima prima pagina PDF">`;return `<img class="case-thumb js-lightbox-thumb hover-preview-source" data-case-id="${c.id}" data-image-id="${a.id}" data-preview-src="${a.dataUrl}" src="${a.dataUrl}" alt="Copertina ${esc(c.sheet)}" title="Ingrandisci copertina">`}
+async function hydratePdfCoverThumbs(root=document){
+ const nodes=Array.from(root.querySelectorAll('.case-thumb-pdf-preview'));
+ for(const img of nodes){
+  if(img.dataset.loaded==='1')continue;
+  const c=state.cases.find(x=>String(x.id)===String(img.dataset.caseId));
+  const a=coverAttachment(c||{});
+  if(!a||!isPdfAttachment(a)||String(a.id)!==String(img.dataset.pdfCoverId))continue;
+  img.dataset.loaded='1';
+  try{
+   const data=await pdfFirstPageDataForPpt(a);
+   if(data){img.src=data;img.classList.add('pdf-thumb-ready')}
+   else{img.outerHTML=`<div class="case-thumb-pdf" title="Copertina PDF: ${esc(a.name)}">PDF</div>`}
+  }catch(e){console.warn('Anteprima PDF non disponibile',a?.name,e);img.outerHTML=`<div class="case-thumb-pdf" title="Copertina PDF: ${esc(a.name)}">PDF</div>`}
+ }
+}
 function setCaseNav(ids,label){caseNavContext={ids:[...ids],label:label||'Casi'} }
 function caseNavInfo(id){let ids=(caseNavContext.ids||[]).filter(x=>state.cases.some(c=>c.id===x&&!c.deletedAt));if(!ids.length)ids=activeCases().sort((a,b)=>total(b)-total(a)).map(c=>c.id);const i=ids.indexOf(id);return {ids,i,pos:i>=0?i+1:1,total:ids.length,prev:i>0?ids[i-1]:null,next:i>=0&&i<ids.length-1?ids[i+1]:null}}
 function navigateCase(targetId){if(!targetId)return;currentCaseId=targetId;renderCase(targetId);window.scrollTo({top:0,behavior:'smooth'})}
@@ -1289,6 +1304,41 @@ function dueBadgeHtml(due,status){const d=dueStatus(due,status);return d.kind===
 function businessBadgesHtml(c){const b=[];const ageMonths=ageScoreForCase(c);if(isCriticalCase(c))b.push('<span class="v18-badge v18-badge-critical">CRITICAL</span>');b.push(`<span class="v18-badge ${ageMonths>=12?'v18-badge-aged':'v18-badge-age'}">AGE ${ageMonths} mesi</span>`);return `<span class="v18-case-badges">${b.join('')}</span>`}
 function attachmentStats(c){const all=[...(c.attachments||[]),...(c.solution?.attachments||[]),...((c.updates||[]).flatMap(u=>u.attachments||[]))];let images=0,email=0,docs=0,links=0;all.forEach(a=>{if(a.external){links++;return}const ext=attachmentExtension(a).toLowerCase();if(isImageAttachment(a))images++;else if(['msg','eml'].includes(ext))email++;else docs++});return {total:all.length,images,email,docs,links}}
 
+function renderActions(){
+ const rows=activeCases().filter(c=>actionIsOpen(c.currentAction)).sort((a,b)=>{
+  const ad=String(a.currentAction?.due||''),bd=String(b.currentAction?.due||'');
+  if(ad&&bd&&ad!==bd)return ad.localeCompare(bd);
+  if(ad&&!bd)return -1;
+  if(!ad&&bd)return 1;
+  return total(b)-total(a)||String(a.sheet).localeCompare(String(b.sheet),undefined,{numeric:true});
+ });
+ setCaseNav(rows.map(c=>c.id),'Azioni aperte');
+ const today=localDateISO();
+ const dueCell=c=>{
+  const due=c.currentAction?.due||'';
+  if(!due)return '<span class="muted">—</span>';
+  const overdue=due<today;
+  return `<span style="font-weight:${overdue?'800':'700'};color:${overdue?'#b42318':'#263746'}">${fmtDate(due)}</span>${overdue?' <span class="status open" style="margin-left:6px">SCADUTA</span>':''}`;
+ };
+ document.getElementById('app').innerHTML=`<div class="page-head"><div><h1 class="page-title">Azioni aperte</h1><div class="sub">Azioni correnti ancora da completare, raggruppate per caso.</div></div></div>
+ <div class="toolbar"><input id="actionSearch" placeholder="Cerca scheda, anomalia, azione, responsabile…"><select id="actionOwnerFilter"><option value="">Tutti i responsabili</option>${ENTITIES.map(e=>`<option>${esc(e)}</option>`).join('')}</select></div>
+ <div class="table-card"><table class="table"><thead><tr><th>Immagine</th><th>Scheda</th><th>Anomalia</th><th>Azione corrente</th><th>Responsabile</th><th>Scadenza</th><th>Stato azione</th></tr></thead><tbody id="actionRows"></tbody></table></div>`;
+ const draw=()=>{
+  const q=document.getElementById('actionSearch').value.trim().toLowerCase();
+  const owner=document.getElementById('actionOwnerFilter').value;
+  const rr=rows.filter(c=>(!owner||c.currentAction?.owner===owner)&&(!q||[c.sheet,c.title,c.currentAction?.text,c.currentAction?.owner].join(' ').toLowerCase().includes(q)));
+  setCaseNav(rr.map(c=>c.id),'Azioni aperte');
+  document.getElementById('actionRows').innerHTML=rr.length?rr.map(c=>`<tr class="clickable" data-id="${esc(c.id)}"><td>${renderCaseThumb(c)}</td><td><b>${esc(c.sheet)}</b></td><td><div class="v18-cell-title">${esc(c.title)}</div></td><td><div style="font-weight:600;line-height:1.4">${esc(c.currentAction?.text||'—')}</div></td><td>${esc(c.currentAction?.owner||'—')}</td><td>${dueCell(c)}</td><td><span class="tag">${esc(c.currentAction?.status||'Aperta')}</span></td></tr>`).join(''):`<tr><td colspan="7" class="empty">Nessuna azione aperta trovata.</td></tr>`;
+  hydratePdfCoverThumbs(document.getElementById('actionRows'));
+  document.querySelectorAll('#actionRows tr[data-id]').forEach(r=>r.onclick=e=>{if(e.target.closest('.js-lightbox-thumb'))return;currentCaseId=r.dataset.id;render()});
+  bindThumbLightboxes(document.getElementById('actionRows'));
+  bindImageHoverPreview();
+ };
+ draw();
+ document.getElementById('actionSearch').addEventListener('input',draw);
+ document.getElementById('actionOwnerFilter').addEventListener('change',draw);
+}
+
 function renderList(){
 const all=activeCases();
 const opens=all.filter(c=>c.status==='open').length,agendaCount=agendaCases().length;
@@ -1316,6 +1366,7 @@ const draw=()=>{
  const rr=rows.filter(c=>(!sf||c.status===sf)&&(!mf||c.models.includes(mf))&&(!ef||c.entity===ef)&&(!cf||categoryLabel(c.category)===cf)&&total(c)>=minScore&&(!agendaOnly||state.agendaIds.includes(c.id))&&(!criticalOnly||isCriticalCase(c))&&(!v18AgeKpiActive||ageScoreForCase(c)>=6)&&(!q||[c.sheet,c.title,c.description,c.entity,...c.models].join(' ').toLowerCase().includes(q)));
  setCaseNav(rr.map(c=>c.id),title);
  document.getElementById('caseRows').innerHTML=rr.length?rr.map((c,i)=>{return `<tr class="clickable" data-id="${c.id}"><td><input class="agenda-toggle" type="checkbox" data-agenda-id="${c.id}" ${state.agendaIds.includes(c.id)?'checked':''} title="Seleziona per Agenda riunione"></td><td><span class="priority-rank">${i+1}</span></td><td><span class="score-pill ${scoreClass(total(c))}">${total(c)}</span></td><td><b>${esc(c.sheet)}</b></td><td>${renderCaseThumb(c)}</td><td><div class="v18-cell-title">${esc(c.title)}</div><div class="v18-business-badges">${businessBadgesHtml(c)}</div></td><td><div class="home-description-cell" title="${esc(c.description||c.title||'—')}">${esc(c.description||c.title||'—')}</div></td><td><span class="status ${statusClass(c.status)}">${statusLabel(c.status)}</span></td></tr>`}).join(''):`<tr><td colspan="8" class="empty">${isAgenda?'Nessun caso selezionato per l’agenda. Selezionali da Tutti i casi / Aperti / Sospesi / Risolti.':'Nessun caso trovato'}</td></tr>`;
+ hydratePdfCoverThumbs(document.getElementById('caseRows'));
  document.querySelectorAll('#caseRows tr[data-id]').forEach(r=>r.onclick=e=>{if(e.target.matches('.agenda-toggle')||e.target.closest('.js-lightbox-thumb'))return;currentCaseId=r.dataset.id;render()});document.querySelectorAll('.agenda-toggle').forEach(cb=>cb.onchange=e=>{e.stopPropagation();toggleAgenda(cb.dataset.agendaId,cb.checked)});bindThumbLightboxes(document.getElementById('caseRows'));bindImageHoverPreview();
 };
 draw();
