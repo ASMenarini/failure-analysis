@@ -1275,10 +1275,15 @@ async function hydratePdfCoverThumbs(root=document){
   img.dataset.loaded='1';
   try{
    const data=await pdfFirstPageDataForPpt(a);
-   if(data){img.src=data;img.classList.add('pdf-thumb-ready')}
+   if(data){
+    img.src=data;
+    img.classList.add('pdf-thumb-ready','hover-preview-source');
+    img.dataset.previewSrc=data;
+   }
    else{img.outerHTML=`<div class="case-thumb-pdf" title="Copertina PDF: ${esc(a.name)}">PDF</div>`}
   }catch(e){console.warn('Anteprima PDF non disponibile',a?.name,e);img.outerHTML=`<div class="case-thumb-pdf" title="Copertina PDF: ${esc(a.name)}">PDF</div>`}
  }
+ bindImageHoverPreview();
 }
 function setCaseNav(ids,label){caseNavContext={ids:[...ids],label:label||'Casi'} }
 function caseNavInfo(id){let ids=(caseNavContext.ids||[]).filter(x=>state.cases.some(c=>c.id===x&&!c.deletedAt));if(!ids.length)ids=activeCases().sort((a,b)=>total(b)-total(a)).map(c=>c.id);const i=ids.indexOf(id);return {ids,i,pos:i>=0?i+1:1,total:ids.length,prev:i>0?ids[i-1]:null,next:i>=0&&i<ids.length-1?ids[i+1]:null}}
