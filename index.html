@@ -1054,7 +1054,7 @@ background:#c9d7e4;
 <div class="mobile-nav-backdrop" id="mobileNavBackdrop"></div>
 <div class="modal-backdrop" id="modalBackdrop"></div>
 <div class="toast" id="toast"></div>
-<div class="build-badge">v20.9.14 DIAG</div>
+<div class="build-badge">v20.9.15 DIAG</div>
 <script>
 (() => {
 'use strict';
@@ -1161,11 +1161,24 @@ function loadDecompressRtfModule(){
 let __rtfDecapsulatorModulePromise=null;
 function loadRtfDecapsulatorModule(){
   if(!__rtfDecapsulatorModulePromise){
-    __rtfDecapsulatorModulePromise=import('https://cdn.skypack.dev/rtf-stream-parser').then(m=>{
-      const fn=m.deEncapsulateSync||m.default?.deEncapsulateSync;
-      if(typeof fn!=='function')throw new Error('Decapsulatore RTF non disponibile');
-      return fn;
-    });
+    __rtfDecapsulatorModulePromise=(async()=>{
+      const urls=[
+        'https://cdn.jsdelivr.net/npm/rtf-stream-parser@4.0.0/+esm',
+        'https://esm.sh/rtf-stream-parser@4.0.0?bundle'
+      ];
+      const errors=[];
+      for(const url of urls){
+        try{
+          const m=await import(url);
+          const fn=m.deEncapsulateSync||m.default?.deEncapsulateSync;
+          if(typeof fn==='function')return fn;
+          errors.push(url+' -> export deEncapsulateSync assente');
+        }catch(e){
+          errors.push(url+' -> '+(e?.message||String(e)));
+        }
+      }
+      throw new Error('Decapsulatore RTF non caricabile. '+errors.join(' | '));
+    })();
   }
   return __rtfDecapsulatorModulePromise;
 }
@@ -1488,7 +1501,7 @@ function renderEmailDiagnostic(diag={}){
   }
   lines.push(`Immagini considerate inline: ${diag.inlineUsedCount||0}`);
   if(diag.dataKeys?.length)lines.push(`Campi MSG disponibili: ${diag.dataKeys.join(', ')}`);
-  return `<div class="email-diagnostic"><h3>⚠ Diagnostica MSG — v20.9.14</h3><pre>${esc(lines.join('\n'))}</pre></div>`;
+  return `<div class="email-diagnostic"><h3>⚠ Diagnostica MSG — v20.9.15</h3><pre>${esc(lines.join('\n'))}</pre></div>`;
 }
 
 function renderParsedEmail(data,fileName='Messaggio e-mail',embedded=[],diag=null){
