@@ -406,6 +406,10 @@ background:#c9d7e4;
 .email-meta{display:grid;grid-template-columns:130px 1fr;gap:8px 14px;background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:14px}
 .email-meta b{font-size:12px;color:#667788;text-transform:uppercase;letter-spacing:.3px}
 .email-body{white-space:pre-wrap;line-height:1.55;background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;min-height:140px;max-height:52vh;overflow:auto}
+.email-body-html{background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.email-body-frame{display:block;width:100%;min-height:240px;height:52vh;border:0;background:#fff}
+.email-inline-note{font-size:11px;color:var(--muted);margin-top:6px}
+
 .email-attachments{display:flex;flex-wrap:wrap;gap:7px}
 .email-attachment-chip{display:inline-flex;align-items:center;gap:6px;background:#eef4f8;border:1px solid #dce6ee;border-radius:16px;padding:6px 9px;font-size:12px;font-weight:700;color:#405466}
 .email-loading{padding:28px;text-align:center;color:var(--muted)}
@@ -1122,6 +1126,17 @@ function loadMsgReaderModule(){
   }
   return __msgReaderModulePromise;
 }
+let __postalMimeModulePromise=null;
+function loadPostalMimeModule(){
+  if(!__postalMimeModulePromise){
+    __postalMimeModulePromise=import('https://cdn.jsdelivr.net/npm/postal-mime@4.0.1/+esm').then(m=>{
+      const Ctor=m.default||m.PostalMime;
+      if(!Ctor||typeof Ctor.parse!=='function') throw new Error('Libreria EML non disponibile');
+      return Ctor;
+    });
+  }
+  return __postalMimeModulePromise;
+}
 function openEmailViewerModal(title){
   const bd=document.getElementById('modalBackdrop');
   bd.innerHTML=`<div class="modal" role="dialog" aria-modal="true"><div class="modal-head"><h2>${esc(title||'Messaggio e-mail')}</h2><button class="x" id="emailViewerX">×</button></div><div class="modal-body" id="emailViewerBody"><div class="email-loading">Apertura messaggio…</div></div><div class="modal-foot"><button class="btn btn-blue" id="emailViewerClose">Chiudi</button></div></div>`;
@@ -1151,6 +1166,18 @@ function emailAttachmentMime(name=''){
   return map[e]||'application/octet-stream';
 }
 function formatBytes(n){n=Number(n)||0;if(!n)return '—';if(n<1024)return n+' B';if(n<1048576)return (n/1024).toFixed(n<10240?1:0)+' KB';return (n/1048576).toFixed(n<10485760?1:0)+' MB'}
+function normalizeEmailCid(v=''){
+  return String(v||'').trim().replace(/^cid:/i,'').replace(/^<|>$/g,'').trim().toLowerCase();
+}
+function emailAttachmentCid(meta={},x={}){
+  const candidates=[
+    meta?.contentId,meta?.contentID,meta?.attachContentId,meta?.attachmentContentId,
+    meta?.pidTagAttachContentId,meta?.PR_ATTACH_CONTENT_ID,
+    x?.contentId,x?.contentID,x?.attachContentId,x?.attachmentContentId
+  ];
+  for(const v of candidates){const c=normalizeEmailCid(v);if(c)return c}
+  return '';
+}
 function extractMsgAttachments(reader,data){
   const metas=Array.isArray(data?.attachments)?data.attachments:[];
   return metas.map((meta,i)=>{
@@ -1158,16 +1185,121 @@ function extractMsgAttachments(reader,data){
       const x=reader.getAttachment(meta);
       const name=x?.fileName||meta?.fileName||meta?.fileNameShort||('Allegato '+(i+1));
       const content=x?.content;
-      if(!content)return {index:i,name,mime:emailAttachmentMime(name),size:Number(meta?.contentLength)||0,error:'Contenuto non disponibile'};
+      const cid=emailAttachmentCid(meta,x);
+      if(!content)return {index:i,name,mime:emailAttachmentMime(name),size:Number(meta?.contentLength)||0,cid,error:'Contenuto non disponibile'};
       const bytes=content instanceof Uint8Array?content:new Uint8Array(content);
       const mime=emailAttachmentMime(name);
       const blob=new Blob([bytes],{type:mime});
       const url=URL.createObjectURL(blob);
-      return {index:i,name,mime,size:bytes.byteLength||Number(meta?.contentLength)||0,url,isImage:mime.startsWith('image/'),isPdf:mime==='application/pdf'};
+      return {index:i,name,mime,size:bytes.byteLength||Number(meta?.contentLength)||0,url,cid,isImage:mime.startsWith('image/'),isPdf:mime==='application/pdf',inlineHint:!!cid};
     }catch(e){
-      return {index:i,name:meta?.fileName||meta?.fileNameShort||('Allegato '+(i+1)),mime:'application/octet-stream',size:Number(meta?.contentLength)||0,error:e?.message||String(e)};
+      return {index:i,name:meta?.fileName||meta?.fileNameShort||('Allegato '+(i+1)),mime:'application/octet-stream',size:Number(meta?.contentLength)||0,cid:emailAttachmentCid(meta,{}),error:e?.message||String(e)};
     }
   });
+}
+function emailAddressText(v){
+  if(!v)return '';
+  if(typeof v==='string')return v;
+  const name=v.name||'',address=v.address||v.email||'';
+  return name&&address?`${name} <${address}>`:(name||address);
+}
+function postalRecipients(arr,type){
+  return (Array.isArray(arr)?arr:[]).map(x=>({name:emailAddressText(x),email:x?.address||'',recipType:type}));
+}
+function postalEmailToViewerData(mail){
+  return {
+    subject:mail?.subject||'',
+    senderName:emailAddressText(mail?.from)||'',
+    senderEmail:mail?.from?.address||'',
+    recipients:[
+      ...postalRecipients(mail?.to,'to'),
+      ...postalRecipients(mail?.cc,'cc'),
+      ...postalRecipients(mail?.bcc,'bcc')
+    ],
+    body:mail?.text||'',
+    bodyHtml:mail?.html||'',
+    messageDeliveryTime:mail?.date||''
+  };
+}
+function extractPostalAttachments(mail){
+  return (Array.isArray(mail?.attachments)?mail.attachments:[]).map((a,i)=>{
+    try{
+      const name=a?.filename||('Allegato '+(i+1));
+      const mime=a?.mimeType||emailAttachmentMime(name);
+      const content=a?.content;
+      const bytes=content instanceof Uint8Array?content:(content instanceof ArrayBuffer?new Uint8Array(content):new TextEncoder().encode(String(content||'')));
+      const blob=new Blob([bytes],{type:mime});
+      const url=URL.createObjectURL(blob);
+      const cid=normalizeEmailCid(a?.contentId||'');
+      return {index:i,name,mime,size:bytes.byteLength,url,cid,isImage:mime.startsWith('image/'),isPdf:mime==='application/pdf',inlineHint:!!(cid||a?.related||String(a?.disposition||'').toLowerCase()==='inline')};
+    }catch(e){
+      return {index:i,name:a?.filename||('Allegato '+(i+1)),mime:a?.mimeType||'application/octet-stream',size:0,cid:normalizeEmailCid(a?.contentId||''),error:e?.message||String(e)};
+    }
+  });
+}
+function findInlineEmailAttachment(src,embedded=[]){
+  const raw=String(src||'').trim();
+  if(!raw)return null;
+  if(/^cid:/i.test(raw)){
+    const cid=normalizeEmailCid(raw);
+    let a=embedded.find(x=>x.url&&normalizeEmailCid(x.cid)===cid);
+    if(a)return a;
+    const base=cid.split('@')[0].split('/').pop();
+    a=embedded.find(x=>x.url&&String(x.name||'').toLowerCase()===base);
+    if(a)return a;
+    return embedded.find(x=>x.url&&String(x.name||'').toLowerCase()===cid)||null;
+  }
+  const clean=decodeURIComponent(raw.split(/[?#]/)[0]||'').split('/').pop().toLowerCase();
+  if(clean)return embedded.find(x=>x.url&&String(x.name||'').toLowerCase()===clean)||null;
+  return null;
+}
+function buildSafeEmailHtml(html,embedded=[]){
+  if(!html||!String(html).trim())return {html:'',used:new Set()};
+  const doc=new DOMParser().parseFromString(String(html),'text/html');
+  const used=new Set();
+
+  doc.querySelectorAll('script,iframe,object,embed,form,base,meta[http-equiv]').forEach(n=>n.remove());
+  doc.querySelectorAll('*').forEach(el=>{
+    [...el.attributes].forEach(a=>{
+      const n=a.name.toLowerCase(),v=String(a.value||'');
+      if(n.startsWith('on'))el.removeAttribute(a.name);
+      if((n==='href'||n==='src'||n==='xlink:href')&&/^\s*javascript:/i.test(v))el.removeAttribute(a.name);
+    });
+  });
+
+  doc.querySelectorAll('img').forEach(img=>{
+    const src=img.getAttribute('src')||'';
+    const a=findInlineEmailAttachment(src,embedded);
+    if(a?.url){
+      img.setAttribute('src',a.url);
+      img.setAttribute('data-inline-email-image','1');
+      img.setAttribute('data-inline-email-name',a.name||'Immagine');
+      img.style.maxWidth='100%';
+      img.style.height='auto';
+      used.add(a.index);
+    }else if(/^https?:/i.test(src)){
+      img.removeAttribute('src');
+      img.setAttribute('alt',(img.getAttribute('alt')||'Immagine esterna')+' [contenuto remoto bloccato]');
+    }
+  });
+
+  doc.querySelectorAll('a[href]').forEach(a=>{
+    const href=a.getAttribute('href')||'';
+    if(/^https?:|^mailto:/i.test(href)){
+      a.setAttribute('target','_blank');
+      a.setAttribute('rel','noopener noreferrer');
+    }
+  });
+
+  const style=`<style>
+    html,body{margin:0;padding:0;background:#fff;color:#17212b;font:14px/1.5 Inter,Segoe UI,Arial,sans-serif}
+    body{padding:16px;overflow-wrap:anywhere}
+    img{max-width:100%;height:auto}
+    table{max-width:100%;border-collapse:collapse}
+    a{color:#0b4f8a}
+    blockquote{margin:10px 0 10px 14px;padding-left:12px;border-left:3px solid #dce4ec;color:#526273}
+  </style>`;
+  return {html:'<!doctype html><html><head><meta charset="utf-8">'+style+'</head><body>'+doc.body.innerHTML+'</body></html>',used};
 }
 function renderParsedEmail(data,fileName='Messaggio e-mail',embedded=[]){
   const from=[data?.senderName,data?.senderEmail].filter(Boolean).join(data?.senderName&&data?.senderEmail?' <':'');
@@ -1176,17 +1308,28 @@ function renderParsedEmail(data,fileName='Messaggio e-mail',embedded=[]){
   const cc=emailRecipients(data,'cc')||'—';
   const bcc=emailRecipients(data,'bcc')||'';
   const subject=data?.subject||fileName||'—';
-  const body=(data?.body&&String(data.body).trim())?String(data.body):(htmlToPlainText(data?.bodyHtml||data?.htmlBody||data?.html||'').trim()||'Corpo del messaggio non disponibile in formato testo.');
-  let attHtml='<div class="muted">Nessun allegato interno.</div>';
-  if(embedded.length){
-    attHtml=`<div class="email-attachments">${embedded.map((a,i)=>{
+
+  const rawHtml=data?.bodyHtml||data?.htmlBody||data?.html||'';
+  const safe=buildSafeEmailHtml(rawHtml,embedded);
+  const inlineUsed=safe.used;
+  const plainBody=(data?.body&&String(data.body).trim())?String(data.body):(htmlToPlainText(rawHtml).trim()||'Corpo del messaggio non disponibile.');
+  const remaining=embedded.filter(a=>!inlineUsed.has(a.index));
+
+  const bodyHtml=safe.html
+    ? `<div class="email-body-html"><iframe class="email-body-frame" sandbox="allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer" srcdoc="${esc(safe.html)}"></iframe></div><div class="email-inline-note">Le immagini incorporate restano nel punto originale del messaggio. Le immagini remote esterne vengono bloccate.</div>`
+    : `<div class="email-body">${esc(plainBody)}</div>`;
+
+  let attHtml='<div class="muted">Nessun allegato separato dal corpo del messaggio.</div>';
+  if(remaining.length){
+    attHtml=`<div class="email-attachments">${remaining.map((a,i)=>{
       const ext=(emailAttachmentExt(a.name)||'FILE').toUpperCase();
       const preview=a.url&&a.isImage?`<div class="email-attachment-preview"><img class="email-msg-image" data-url="${esc(a.url)}" data-name="${esc(a.name)}" src="${esc(a.url)}" alt="${esc(a.name)}"></div>`:`<div class="email-attachment-preview">${esc(ext)}</div>`;
       const tools=a.url?`${(a.isImage||a.isPdf)?`<button class="btn btn-soft email-msg-open" type="button" data-url="${esc(a.url)}" data-name="${esc(a.name)}" data-image="${a.isImage?'1':'0'}">Apri</button>`:''}<a class="btn btn-ghost" href="${esc(a.url)}" download="${esc(a.name)}">Scarica</a>`:`<span class="muted">Non estraibile</span>`;
       return `<div class="email-attachment-card">${preview}<div class="email-attachment-info"><div class="email-attachment-name" title="${esc(a.name)}">${esc(a.name)}</div><div class="email-attachment-meta">${esc(ext)} · ${esc(formatBytes(a.size))}${a.error?' · '+esc(a.error):''}</div><div class="email-attachment-tools">${tools}</div></div></div>`;
     }).join('')}</div>`;
   }
-  return `<div class="email-viewer"><div class="email-meta"><b>Oggetto</b><div>${esc(subject)}</div><b>Da</b><div>${esc(fromText)}</div><b>A</b><div>${esc(to)}</div><b>Cc</b><div>${esc(cc)}</div>${bcc?`<b>Ccn</b><div>${esc(bcc)}</div>`:''}<b>Data</b><div>${esc(emailDateText(data))}</div></div><div><div class="section-title" style="margin-bottom:8px">Messaggio</div><div class="email-body">${esc(body)}</div></div><div><div class="section-title" style="margin-bottom:8px">Allegati nel messaggio (${embedded.length})</div>${attHtml}</div></div>`;
+
+  return `<div class="email-viewer"><div class="email-meta"><b>Oggetto</b><div>${esc(subject)}</div><b>Da</b><div>${esc(fromText)}</div><b>A</b><div>${esc(to)}</div><b>Cc</b><div>${esc(cc)}</div>${bcc?`<b>Ccn</b><div>${esc(bcc)}</div>`:''}<b>Data</b><div>${esc(emailDateText(data))}</div></div><div><div class="section-title" style="margin-bottom:8px">Messaggio</div>${bodyHtml}</div><div><div class="section-title" style="margin-bottom:8px">Allegati separati (${remaining.length})</div>${attHtml}</div></div>`;
 }
 function bindEmbeddedMsgAttachments(scope=document){
   scope.querySelectorAll('.email-msg-image').forEach(img=>img.onclick=e=>{e.preventDefault();openLightbox([{id:'msg-att',name:img.dataset.name||'Allegato',dataUrl:img.dataset.url,type:'image/*',live:true}],'msg-att')});
@@ -1211,7 +1354,16 @@ async function openEmailInline(attId,name='Messaggio.msg'){
     const ext=String(name).split('.').pop().toLowerCase();
     let data;
     if(ext==='eml'){
-      data=parseSimpleEml(await r.text());
+      const buf=await r.arrayBuffer();
+      try{
+        const PostalMime=await loadPostalMimeModule();
+        const mail=await PostalMime.parse(buf,{attachmentEncoding:'arraybuffer'});
+        data=postalEmailToViewerData(mail);
+        embedded=extractPostalAttachments(mail);
+      }catch(parseErr){
+        console.warn('Parser EML completo non disponibile, uso fallback semplice',parseErr);
+        data=parseSimpleEml(new TextDecoder().decode(buf));
+      }
     }else{
       const buf=await r.arrayBuffer();
       const MsgReader=await loadMsgReaderModule();
