@@ -1054,7 +1054,7 @@ background:#c9d7e4;
 <div class="mobile-nav-backdrop" id="mobileNavBackdrop"></div>
 <div class="modal-backdrop" id="modalBackdrop"></div>
 <div class="toast" id="toast"></div>
-<div class="build-badge">v20.9.15 DIAG</div>
+<div class="build-badge">v20.9.16 DIAG</div>
 <script>
 (() => {
 'use strict';
@@ -1258,6 +1258,15 @@ function normalizeEmailCid(v=''){
   return String(v||'').replace(/\u0000/g,'').trim().replace(/^cid:/i,'').replace(/^<|>$/g,'').trim().toLowerCase();
 }
 function cleanMsgString(v=''){return String(v||'').replace(/\u0000/g,'').trim()}
+function bytesToDataUrl(bytes,mime='application/octet-stream'){
+  const u8=bytes instanceof Uint8Array?bytes:new Uint8Array(bytes||[]);
+  let bin='';
+  const step=0x8000;
+  for(let i=0;i<u8.length;i+=step){
+    bin+=String.fromCharCode(...u8.subarray(i,Math.min(i+step,u8.length)));
+  }
+  return `data:${mime};base64,${btoa(bin)}`;
+}
 function emailAttachmentCid(meta={},x={}){
   const candidates=[
     meta?.pidContentId,
@@ -1290,7 +1299,9 @@ function extractMsgAttachments(reader,data){
       const mime=emailAttachmentMime(name);
       const blob=new Blob([bytes],{type:mime});
       const url=URL.createObjectURL(blob);
-      return {index:i,name,mime,size:bytes.byteLength||Number(meta?.contentLength)||0,url,cid,isImage:mime.startsWith('image/'),isPdf:mime==='application/pdf',inlineHint:!!cid};
+      const isImage=mime.startsWith('image/');
+      const dataUrl=isImage?bytesToDataUrl(bytes,mime):'';
+      return {index:i,name,mime,size:bytes.byteLength||Number(meta?.contentLength)||0,url,dataUrl,cid,isImage,isPdf:mime==='application/pdf',inlineHint:!!cid};
     }catch(e){
       return {index:i,name:cleanMsgString(meta?.fileName||meta?.fileNameShort||('Allegato '+(i+1))),mime:'application/octet-stream',size:Number(meta?.contentLength)||0,cid:emailAttachmentCid(meta,{}),error:e?.message||String(e)};
     }
@@ -1330,7 +1341,9 @@ function extractPostalAttachments(mail){
       const blob=new Blob([bytes],{type:mime});
       const url=URL.createObjectURL(blob);
       const cid=normalizeEmailCid(a?.contentId||'');
-      return {index:i,name,mime,size:bytes.byteLength,url,cid,isImage:mime.startsWith('image/'),isPdf:mime==='application/pdf',inlineHint:!!(cid||a?.related||String(a?.disposition||'').toLowerCase()==='inline')};
+      const isImage=mime.startsWith('image/');
+      const dataUrl=isImage?bytesToDataUrl(bytes,mime):'';
+      return {index:i,name,mime,size:bytes.byteLength,url,dataUrl,cid,isImage,isPdf:mime==='application/pdf',inlineHint:!!(cid||a?.related||String(a?.disposition||'').toLowerCase()==='inline')};
     }catch(e){
       return {index:i,name:a?.filename||('Allegato '+(i+1)),mime:a?.mimeType||'application/octet-stream',size:0,cid:normalizeEmailCid(a?.contentId||''),error:e?.message||String(e)};
     }
@@ -1341,15 +1354,15 @@ function findInlineEmailAttachment(src,embedded=[]){
   if(!raw)return null;
   if(/^cid:/i.test(raw)){
     const cid=normalizeEmailCid(raw);
-    let a=embedded.find(x=>x.url&&normalizeEmailCid(x.cid)===cid);
+    let a=embedded.find(x=>(x.dataUrl||x.url)&&normalizeEmailCid(x.cid)===cid);
     if(a)return a;
     const base=cid.split('@')[0].split('/').pop();
-    a=embedded.find(x=>x.url&&String(x.name||'').toLowerCase()===base);
+    a=embedded.find(x=>(x.dataUrl||x.url)&&String(x.name||'').toLowerCase()===base);
     if(a)return a;
-    return embedded.find(x=>x.url&&String(x.name||'').toLowerCase()===cid)||null;
+    return embedded.find(x=>(x.dataUrl||x.url)&&String(x.name||'').toLowerCase()===cid)||null;
   }
   const clean=decodeURIComponent(raw.split(/[?#]/)[0]||'').split('/').pop().toLowerCase();
-  if(clean)return embedded.find(x=>x.url&&String(x.name||'').toLowerCase()===clean)||null;
+  if(clean)return embedded.find(x=>(x.dataUrl||x.url)&&String(x.name||'').toLowerCase()===clean)||null;
   return null;
 }
 function buildSafeEmailHtml(html,embedded=[]){
@@ -1369,8 +1382,8 @@ function buildSafeEmailHtml(html,embedded=[]){
   doc.querySelectorAll('img').forEach(img=>{
     const src=img.getAttribute('src')||'';
     const a=findInlineEmailAttachment(src,embedded);
-    if(a?.url){
-      img.setAttribute('src',a.url);
+    if(a?.dataUrl||a?.url){
+      img.setAttribute('src',a.dataUrl||a.url);
       img.setAttribute('data-inline-email-image','1');
       img.setAttribute('data-inline-email-name',a.name||'Immagine');
       img.style.maxWidth='100%';
@@ -1501,7 +1514,7 @@ function renderEmailDiagnostic(diag={}){
   }
   lines.push(`Immagini considerate inline: ${diag.inlineUsedCount||0}`);
   if(diag.dataKeys?.length)lines.push(`Campi MSG disponibili: ${diag.dataKeys.join(', ')}`);
-  return `<div class="email-diagnostic"><h3>⚠ Diagnostica MSG — v20.9.15</h3><pre>${esc(lines.join('\n'))}</pre></div>`;
+  return `<div class="email-diagnostic"><h3>⚠ Diagnostica MSG — v20.9.16</h3><pre>${esc(lines.join('\n'))}</pre></div>`;
 }
 
 function renderParsedEmail(data,fileName='Messaggio e-mail',embedded=[],diag=null){
