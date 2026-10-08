@@ -104,8 +104,6 @@ color:var(--blue);
 .modal-backdrop{position:fixed;inset:0;background:rgba(10,25,40,.5);display:none;align-items:flex-start;justify-content:center;padding:50px 20px;z-index:100;overflow:auto}.modal-backdrop.show{display:flex}.modal{width:min(980px,100%);background:#fff;border-radius:14px;box-shadow:var(--shadow);overflow:hidden}.modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--line)}.modal-head h2{margin:0;font-size:21px}.modal-body{padding:20px}.modal-foot{display:flex;justify-content:flex-end;gap:10px;padding:16px 20px;border-top:1px solid var(--line);background:#fafbfd}.x{border:0;background:transparent;font-size:24px;color:#697586}
 .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}.field label{font-size:12px;font-weight:800;color:#526273;text-transform:uppercase}.field input,.field select,.field textarea{border:1px solid #cfd9e3;border-radius:8px;padding:10px;background:#fff}.field textarea{min-height:95px;resize:vertical}.hint{font-size:12px;color:var(--muted)}.required:after{content:' *';color:#d92d20}.form-section{border-top:1px solid var(--line);padding-top:16px;margin-top:16px}.form-section:first-child{border-top:0;padding-top:0;margin-top:0}.form-title{font-weight:800;margin-bottom:10px;color:#324252}.inline-row{display:grid;grid-template-columns:1fr 1.5fr auto;gap:8px;margin-bottom:8px}.inline-row.qty{grid-template-columns:1fr 1.5fr .6fr auto}.multi-wrap{position:relative}.multi-button{width:100%;text-align:left;border:1px solid #cfd9e3;background:#fff;border-radius:8px;padding:10px;min-height:41px}.multi-panel{display:none;position:absolute;left:0;right:0;top:45px;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);padding:8px;z-index:5;max-height:220px;overflow:auto}.multi-panel.show{display:block}.multi-option{display:flex;gap:8px;padding:6px}.chips{display:flex;gap:5px;flex-wrap:wrap}.chip{background:#edf4fa;border-radius:14px;padding:4px 8px;font-size:12px}.empty{padding:35px;text-align:center;color:var(--muted)}
 .toast{position:fixed;right:20px;bottom:20px;background:#17212b;color:#fff;padding:12px 15px;border-radius:9px;z-index:200;display:none}.toast.show{display:block}.danger-zone{border:1px solid #fecdca;background:#fff6f5}.danger-zone .section-title{color:var(--danger)}
-.build-badge{position:fixed;right:12px;top:82px;z-index:9999;background:#17212b;color:#fff;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:800;letter-spacing:.35px;box-shadow:0 4px 12px rgba(0,0,0,.16);opacity:.92;pointer-events:none}
-@media(max-width:700px){.build-badge{top:70px;right:8px;font-size:10px;padding:5px 8px}}
 
 @media(max-width:1050px){.shell{grid-template-columns:1fr}.sidebar{display:none}.kpis{grid-template-columns:repeat(2,1fr)}.case-layout{grid-template-columns:1fr}.case-side{position:static}.meta-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:700px){.main{padding:16px}.topbar{padding:0 15px}.brand-title{display:none}.form-grid,.grid-2,.meta-grid,.action-row,.timeline-extra{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}.table-card{overflow:auto}.toolbar input{min-width:100%}}
@@ -412,11 +410,6 @@ background:#c9d7e4;
 .email-body-html{background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .email-body-frame{display:block;width:100%;min-height:240px;height:52vh;border:0;background:#fff}
 .email-inline-note{font-size:11px;color:var(--muted);margin-top:6px}
-.email-diagnostic{border:2px solid #f0b429;background:#fff9e8;border-radius:10px;padding:12px 14px;margin-bottom:14px}
-.email-diagnostic h3{margin:0 0 8px;color:#8a5b00;font-size:13px;text-transform:uppercase;letter-spacing:.45px}
-.email-diagnostic pre{margin:0;white-space:pre-wrap;word-break:break-word;font:11px/1.45 Consolas,Monaco,monospace;color:#3d4852;max-height:300px;overflow:auto;background:#fff;border:1px solid #ead9a5;border-radius:7px;padding:10px}
-.email-diagnostic .diag-ok{color:#067647;font-weight:800}
-.email-diagnostic .diag-ko{color:#b42318;font-weight:800}
 
 
 .email-attachments{display:flex;flex-wrap:wrap;gap:7px}
@@ -1054,7 +1047,6 @@ background:#c9d7e4;
 <div class="mobile-nav-backdrop" id="mobileNavBackdrop"></div>
 <div class="modal-backdrop" id="modalBackdrop"></div>
 <div class="toast" id="toast"></div>
-<div class="build-badge">v20.9.16 DIAG</div>
 <script>
 (() => {
 'use strict';
@@ -1194,19 +1186,16 @@ function rtfEncodingLabel(enc=''){
   }
   return enc||'windows-1252';
 }
-async function recoverHtmlFromCompressedRtf(data={},diag=null){
+async function recoverHtmlFromCompressedRtf(data={}){
   const comp=data?.compressedRtf;
-  if(diag)diag.hasCompressedRtf=!!comp;
   if(!comp)return '';
   try{
     const bytes=asEmailBytes(comp);
-    if(diag)diag.compressedRtfBytes=bytes?.byteLength||0;
     if(!bytes||!bytes.byteLength)return '';
     const [decompressRTF,deEncapsulateSync]=await Promise.all([loadDecompressRtfModule(),loadRtfDecapsulatorModule()]);
     const raw=decompressRTF(bytes);
     const rtfBytes=asEmailBytes(raw)||raw;
     const rtfText=typeof rtfBytes==='string'?rtfBytes:new TextDecoder('windows-1252',{fatal:false}).decode(rtfBytes);
-    if(diag){diag.rtfDecompressed=true;diag.rtfTextLength=String(rtfText||'').length;diag.rtfHead=String(rtfText||'').slice(0,180)}
     const result=deEncapsulateSync(rtfText,{
       mode:'either',
       allowCp0:true,
@@ -1216,11 +1205,9 @@ async function recoverHtmlFromCompressedRtf(data={},diag=null){
         catch{return new TextDecoder('windows-1252',{fatal:false}).decode(buf)}
       }
     });
-    if(diag){diag.decapsulateMode=result?.mode||'';diag.decapsulatedLength=String(result?.text||'').length}
-    if(result?.mode==='html'&&result?.text){if(diag)diag.rtfHtmlRecovered=true;return String(result.text)}
+    if(result?.mode==='html'&&result?.text)return String(result.text)
     return '';
   }catch(e){
-    if(diag)diag.rtfError=e?.message||String(e);
     console.warn('Recupero HTML da RTF Outlook fallito',e);
     return '';
   }
@@ -1472,52 +1459,8 @@ function getEmailHtmlBody(data={}){
 }
 
 
-function emailHtmlDiagnostics(html='',embedded=[]){
-  const srcs=[];
-  const cids=[];
-  try{
-    const doc=new DOMParser().parseFromString(String(html||''),'text/html');
-    doc.querySelectorAll('img').forEach(img=>{
-      const src=img.getAttribute('src')||'';
-      srcs.push(src);
-      if(/^cid:/i.test(src))cids.push(normalizeEmailCid(src));
-    });
-  }catch{}
-  const uniqueCids=[...new Set(cids.filter(Boolean))];
-  const matches=uniqueCids.map(cid=>{
-    const a=findInlineEmailAttachment('cid:'+cid,embedded);
-    return {cid,match:a?`${a.name||'?'}${a.cid?' ['+a.cid+']':''}`:'NESSUNA CORRISPONDENZA'};
-  });
-  return {imgCount:srcs.length,imgSrcs:srcs,cids:uniqueCids,matches};
-}
-function renderEmailDiagnostic(diag={}){
-  const yes=v=>v?'SI':'NO';
-  const lines=[];
-  lines.push(`Formato: ${diag.ext||'?'}`);
-  lines.push(`HTML diretto presente: ${yes(diag.directHtml)}${diag.directHtmlLength!=null?' ('+diag.directHtmlLength+' caratteri)':''}`);
-  lines.push(`compressedRtf presente: ${yes(diag.hasCompressedRtf)}${diag.compressedRtfBytes!=null?' ('+diag.compressedRtfBytes+' byte)':''}`);
-  lines.push(`RTF decompresso: ${yes(diag.rtfDecompressed)}${diag.rtfTextLength!=null?' ('+diag.rtfTextLength+' caratteri)':''}`);
-  lines.push(`RTF -> HTML recuperato: ${yes(diag.rtfHtmlRecovered)}${diag.decapsulateMode?' [mode='+diag.decapsulateMode+']':''}${diag.decapsulatedLength!=null?' ('+diag.decapsulatedLength+' caratteri)':''}`);
-  if(diag.rtfError)lines.push(`ERRORE RTF: ${diag.rtfError}`);
-  lines.push(`HTML usato dal viewer: ${diag.finalHtmlLength||0} caratteri`);
-  lines.push(`IMG trovate nell'HTML: ${diag.imgCount||0}`);
-  lines.push(`CID trovati nel corpo: ${(diag.cids||[]).length?diag.cids.join(' | '):'NESSUNO'}`);
-  if((diag.imgSrcs||[]).length){
-    lines.push('SRC immagini:');
-    (diag.imgSrcs||[]).forEach((s,i)=>lines.push(`  ${i+1}. ${s||'(vuoto)'}`));
-  }
-  lines.push(`Allegati estratti: ${(diag.attachments||[]).length}`);
-  (diag.attachments||[]).forEach((a,i)=>lines.push(`  ${i+1}. ${a.name||'?'} | cid=${a.cid||'(nessuno)'} | ${a.mime||''} | ${a.size||0} byte${a.error?' | ERRORE='+a.error:''}`));
-  if((diag.matches||[]).length){
-    lines.push('Associazione CID -> allegato:');
-    diag.matches.forEach(m=>lines.push(`  ${m.cid} => ${m.match}`));
-  }
-  lines.push(`Immagini considerate inline: ${diag.inlineUsedCount||0}`);
-  if(diag.dataKeys?.length)lines.push(`Campi MSG disponibili: ${diag.dataKeys.join(', ')}`);
-  return `<div class="email-diagnostic"><h3>⚠ Diagnostica MSG — v20.9.16</h3><pre>${esc(lines.join('\n'))}</pre></div>`;
-}
 
-function renderParsedEmail(data,fileName='Messaggio e-mail',embedded=[],diag=null){
+function renderParsedEmail(data,fileName='Messaggio e-mail',embedded=[]){
   const from=[data?.senderName,data?.senderEmail].filter(Boolean).join(data?.senderName&&data?.senderEmail?' <':'');
   const fromText=data?.senderName&&data?.senderEmail?from+'>':(from||'—');
   const to=emailRecipients(data,'to')||'—';
@@ -1544,12 +1487,7 @@ function renderParsedEmail(data,fileName='Messaggio e-mail',embedded=[],diag=nul
       return `<div class="email-attachment-card">${preview}<div class="email-attachment-info"><div class="email-attachment-name" title="${esc(a.name)}">${esc(a.name)}</div><div class="email-attachment-meta">${esc(ext)} · ${esc(formatBytes(a.size))}${a.error?' · '+esc(a.error):''}</div><div class="email-attachment-tools">${tools}</div></div></div>`;
     }).join('')}</div>`;
   }
-
-  if(diag){
-    const hd=emailHtmlDiagnostics(rawHtml,embedded);
-    Object.assign(diag,hd,{finalHtmlLength:String(rawHtml||'').length,inlineUsedCount:inlineUsed.size,attachments:embedded.map(a=>({name:a.name,cid:a.cid,mime:a.mime,size:a.size,error:a.error||''}))});
-  }
-  return `<div class="email-viewer">${diag?renderEmailDiagnostic(diag):''}<div class="email-meta"><b>Oggetto</b><div>${esc(subject)}</div><b>Da</b><div>${esc(fromText)}</div><b>A</b><div>${esc(to)}</div><b>Cc</b><div>${esc(cc)}</div>${bcc?`<b>Ccn</b><div>${esc(bcc)}</div>`:''}<b>Data</b><div>${esc(emailDateText(data))}</div></div><div><div class="section-title" style="margin-bottom:8px">Messaggio</div>${bodyHtml}</div><div><div class="section-title" style="margin-bottom:8px">Allegati separati (${remaining.length})</div>${attHtml}</div></div>`;
+  return `<div class="email-viewer"><div class="email-meta"><b>Oggetto</b><div>${esc(subject)}</div><b>Da</b><div>${esc(fromText)}</div><b>A</b><div>${esc(to)}</div><b>Cc</b><div>${esc(cc)}</div>${bcc?`<b>Ccn</b><div>${esc(bcc)}</div>`:''}<b>Data</b><div>${esc(emailDateText(data))}</div></div><div><div class="section-title" style="margin-bottom:8px">Messaggio</div>${bodyHtml}</div><div><div class="section-title" style="margin-bottom:8px">Allegati separati (${remaining.length})</div>${attHtml}</div></div>`;
 }
 function bindEmbeddedMsgAttachments(scope=document){
   scope.querySelectorAll('.email-msg-image').forEach(img=>img.onclick=e=>{e.preventDefault();openLightbox([{id:'msg-att',name:img.dataset.name||'Allegato',dataUrl:img.dataset.url,type:'image/*',live:true}],'msg-att')});
@@ -1568,7 +1506,6 @@ function parseSimpleEml(text){
 async function openEmailInline(attId,name='Messaggio.msg'){
   const ui=openEmailViewerModal(name);
   let embedded=[];
-  const diag={ext:String(name).split('.').pop().toLowerCase()};
   try{
     const r=await fetch(attachmentOpenUrl(attId),{cache:'no-store'});
     if(!r.ok)throw new Error('Errore '+r.status);
@@ -1591,26 +1528,21 @@ async function openEmailInline(attId,name='Messaggio.msg'){
       const reader=new MsgReader(buf);
       data=reader.getFileData();
       if(!data||typeof data!=='object')throw new Error('Formato MSG non leggibile');
-      diag.dataKeys=Object.keys(data||{}).sort();
       const directHtml=getEmailHtmlBody(data);
-      diag.directHtml=!!directHtml;
-      diag.directHtmlLength=String(directHtml||'').length;
-      diag.hasCompressedRtf=!!data?.compressedRtf;
       embedded=extractMsgAttachments(reader,data);
       if(!directHtml&&data?.compressedRtf){
-        const recoveredHtml=await recoverHtmlFromCompressedRtf(data,diag);
+        const recoveredHtml=await recoverHtmlFromCompressedRtf(data);
         if(recoveredHtml)data.bodyHtml=recoveredHtml;
       }
     }
-    if(ui.body){ui.body.innerHTML=renderParsedEmail(data,name,embedded,ext==='msg'?diag:null);bindEmbeddedMsgAttachments(ui.body)}
+    if(ui.body){ui.body.innerHTML=renderParsedEmail(data,name,embedded);bindEmbeddedMsgAttachments(ui.body)}
     const oldClose=ui.close;
     ui.close=()=>{embedded.forEach(a=>{if(a.url)try{URL.revokeObjectURL(a.url)}catch{}});oldClose()};
     const closeBtn=document.getElementById('emailViewerClose'),xBtn=document.getElementById('emailViewerX'),bd=document.getElementById('modalBackdrop');
     if(closeBtn)closeBtn.onclick=ui.close;if(xBtn)xBtn.onclick=ui.close;if(bd)bd.onclick=e=>{if(e.target===bd)ui.close()};
   }catch(e){
     embedded.forEach(a=>{if(a.url)try{URL.revokeObjectURL(a.url)}catch{}});
-    diag.fatalError=e?.message||String(e);
-    if(ui.body)ui.body.innerHTML=`${diag.ext==='msg'?renderEmailDiagnostic(diag):''}<div class="card danger-zone"><h3 class="section-title">Impossibile visualizzare il messaggio</h3><div>${esc(e.message||String(e))}</div><div class="muted" style="margin-top:8px">Il file originale resta disponibile con il pulsante Scarica.</div></div>`;
+    if(ui.body)ui.body.innerHTML=`<div class="card danger-zone"><h3 class="section-title">Impossibile visualizzare il messaggio</h3><div>${esc(e.message||String(e))}</div><div class="muted" style="margin-top:8px">Il file originale resta disponibile con il pulsante Scarica.</div></div>`;
   }
 }
 
