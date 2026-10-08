@@ -1171,8 +1171,10 @@ function normalizeEmailCid(v=''){
 }
 function emailAttachmentCid(meta={},x={}){
   const candidates=[
+    meta?.pidContentId,
     meta?.contentId,meta?.contentID,meta?.attachContentId,meta?.attachmentContentId,
     meta?.pidTagAttachContentId,meta?.PR_ATTACH_CONTENT_ID,
+    x?.pidContentId,
     x?.contentId,x?.contentID,x?.attachContentId,x?.attachmentContentId
   ];
   for(const v of candidates){const c=normalizeEmailCid(v);if(c)return c}
