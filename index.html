@@ -1177,6 +1177,14 @@ function emailAttachmentCid(meta={},x={}){
     x?.pidContentId,
     x?.contentId,x?.contentID,x?.attachContentId,x?.attachmentContentId
   ];
+  const scan=o=>{
+    if(!o||typeof o!=='object')return;
+    for(const [k,v] of Object.entries(o)){
+      if(typeof v!=='string')continue;
+      if(/content.?id|attach.?content|3712/i.test(k))candidates.push(v);
+    }
+  };
+  scan(meta);scan(x);
   for(const v of candidates){const c=normalizeEmailCid(v);if(c)return c}
   return '';
 }
@@ -1303,6 +1311,64 @@ function buildSafeEmailHtml(html,embedded=[]){
   </style>`;
   return {html:'<!doctype html><html><head><meta charset="utf-8">'+style+'</head><body>'+doc.body.innerHTML+'</body></html>',used};
 }
+function emailCodepageLabel(data={}){
+  const cp=Number(data?.internetCodepage||data?.messageCodepage||data?.codePage||0);
+  const map={
+    65001:'utf-8',
+    1252:'windows-1252',
+    1250:'windows-1250',
+    1251:'windows-1251',
+    1253:'windows-1253',
+    1254:'windows-1254',
+    1255:'windows-1255',
+    1256:'windows-1256',
+    1257:'windows-1257',
+    1258:'windows-1258',
+    28591:'iso-8859-1',
+    28592:'iso-8859-2',
+    932:'shift_jis',
+    936:'gbk',
+    949:'euc-kr',
+    950:'big5',
+    1200:'utf-16le',
+    1201:'utf-16be'
+  };
+  return map[cp]||'windows-1252';
+}
+function asEmailBytes(v){
+  if(v instanceof Uint8Array)return v;
+  if(v instanceof ArrayBuffer)return new Uint8Array(v);
+  if(ArrayBuffer.isView(v))return new Uint8Array(v.buffer,v.byteOffset,v.byteLength);
+  if(Array.isArray(v)&&v.every(x=>Number.isFinite(Number(x))))return new Uint8Array(v.map(Number));
+  return null;
+}
+function decodeEmailHtmlValue(v,data={}){
+  if(!v)return '';
+  if(typeof v==='string')return v;
+  const bytes=asEmailBytes(v);
+  if(!bytes)return '';
+  const labels=[emailCodepageLabel(data),'utf-8','windows-1252'];
+  let best='';
+  let bestScore=-1;
+  for(const label of [...new Set(labels)]){
+    try{
+      const s=new TextDecoder(label,{fatal:false}).decode(bytes);
+      const low=s.toLowerCase();
+      const score=(low.includes('<html')?8:0)+(low.includes('<body')?6:0)+(low.includes('<img')?8:0)+(low.includes('cid:')?8:0)+(low.includes('<div')?2:0)+(low.includes('<p')?2:0);
+      if(score>bestScore){best=s;bestScore=score}
+    }catch{}
+  }
+  return best;
+}
+function getEmailHtmlBody(data={}){
+  const values=[data?.bodyHtml,data?.htmlBody,data?.html,data?.htmlBodyBytes,data?.bodyHTML];
+  for(const v of values){
+    const s=decodeEmailHtmlValue(v,data);
+    if(s&&/<(?:html|body|div|p|table|img|span|br)\b/i.test(s))return s;
+  }
+  return '';
+}
+
 function renderParsedEmail(data,fileName='Messaggio e-mail',embedded=[]){
   const from=[data?.senderName,data?.senderEmail].filter(Boolean).join(data?.senderName&&data?.senderEmail?' <':'');
   const fromText=data?.senderName&&data?.senderEmail?from+'>':(from||'—');
@@ -1311,7 +1377,7 @@ function renderParsedEmail(data,fileName='Messaggio e-mail',embedded=[]){
   const bcc=emailRecipients(data,'bcc')||'';
   const subject=data?.subject||fileName||'—';
 
-  const rawHtml=data?.bodyHtml||data?.htmlBody||data?.html||'';
+  const rawHtml=getEmailHtmlBody(data);
   const safe=buildSafeEmailHtml(rawHtml,embedded);
   const inlineUsed=safe.used;
   const plainBody=(data?.body&&String(data.body).trim())?String(data.body):(htmlToPlainText(rawHtml).trim()||'Corpo del messaggio non disponibile.');
