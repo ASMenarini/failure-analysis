@@ -2176,6 +2176,12 @@ async function recoverAttachmentFile(ref,file){
 }
 function renderMigration(){
   const refs=collectRecoveryAttachments();
+  // Retro-sync: recoveryMatches may still contain rows calculated before an attachment
+  // was deleted. Keep only attachment IDs that still exist among active D1 attachments.
+  const activeRecoveryIds=new Set(refs.map(x=>String(x?.attachment?.id||'')));
+  if(recoveryMatches.length){
+    recoveryMatches=recoveryMatches.filter(x=>activeRecoveryIds.has(String(x?.attachment?.id||'')));
+  }
   const selected=recoverySourceFiles.length;
   const restored=refs.filter(x=>isRecoveredStorageAttachment(x.attachment)).length;
   const pending=refs.length-restored;
